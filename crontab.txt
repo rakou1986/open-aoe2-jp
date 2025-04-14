@@ -16,4 +16,4 @@
 
 0 5 * * * ~/.acme.sh/acme.sh --renew -d open-aoe2-jp.live-on.net --dns --ecc
 5 5 * * * ~/.acme.sh/acme.sh --install-cert -d open-aoe2-jp.live-on.net --key-file ~/open-aoe2-jp/certs/open-aoe2-jp.key --fullchain-file ~/open-aoe2-jp/certs/open-aoe2-jp.fullchain.pem --ecc
-10 5 * * * ~/open-aoe2-jp/restart-uvicorn.sh
+10 5 * * * cd ~/open-aoe2-jp && nohup bash restart-uvicorn.sh > /dev/null 2>&1 &
