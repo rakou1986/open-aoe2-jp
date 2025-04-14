@@ -1,11 +1,19 @@
---renewで新しい証明書をもらう。現在の証明書が60日以上使われていたら新しいのがもらえる。
-証明書の期限は90日。
---install-certでuvicornが使う鍵を作る
-そのあとuvicornを再起動
+# DDNS更新
+*/3 * * * * /data/data/com.termux/files/home/mydns.sh 1> /dev/null 2> /dev/null
+
+# mydns.shの内容は
+# #!/data/data/com.termux/files/usr/bin/sh
+#
+# wget -O - "https://<username>:<password@ipv4.mydns.jp/login.html"
+# wget -O - "https://<username>:<password@ipv6.mydns.jp/login.html"
+
+
+# 証明書の更新
+# --renewで新しい証明書をもらう。現在の証明書が60日以上使われていたら新しいのがもらえる。
+# 証明書の期限は90日。
+# --install-certでuvicornが使う鍵を作る
+# そのあとuvicornを再起動
 
 0 5 * * * ~/.acme.sh/acme.sh --renew -d open-aoe2-jp.live-on.net --dns --ecc
-5 5 * * * ~/.acme.sh/acme.sh --install-cert -d open-aoe2-jp.live-on.net \
-    --key-file ~/open-aoe2-jp/certs/open-aoe2-jp.key \
-    --fullchain-file ~/open-aoe2-jp/certs/open-aoe2-jp.fullchain.pem \
-    --ecc
-10 5 * * * ~/restart-uvicorn.sh
+5 5 * * * ~/.acme.sh/acme.sh --install-cert -d open-aoe2-jp.live-on.net --key-file ~/open-aoe2-jp/certs/open-aoe2-jp.key --fullchain-file ~/open-aoe2-jp/certs/open-aoe2-jp.fullchain.pem --ecc
+10 5 * * * ~/open-aoe2-jp/restart-uvicorn.sh
