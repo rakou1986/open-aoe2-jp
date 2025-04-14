@@ -1,0 +1,67 @@
+Android/Termux でのメモ
+
+[sshdをセット]
+スマホ上で
+termux-setup-storage
+pkg update
+pkg upgrade
+pkg install openssh
+sshd
+pkg install iproute2
+ip -4 a
+192.168.1.なんとかをメモ
+id
+uid=10なんとか(u0_aなんとか) ...
+u0_aなんとかをメモ
+passwd
+パスワード設定
+
+sshでログイン
+接続先：メモした192.168.1.なんとか
+ユーザー：u0_aなんとか
+パスワード：passwdで設定したもの
+
+pkg install python git wget openssl socat vim which openssl-tool cronie dnsutils
+crond
+.bashrcにsshd, crondを入れる
+pip install --upgrade pip setuptools wheel
+pip install ipython requests discord rapidfuzz
+which nano
+パスをメモ
+which vim
+パスをメモ
+pip uninstall nano
+ln -s /path/to/vim /path/to/nano # nanoつぶし
+pip install uvicorn fastapi starlette pydantic python-multipart jinja2 itsdangerous ujson orjson pyyaml httpx # fastapi[all]からuvloopを除外。これはTermux上でRustビルドがうまくいかないため。なくてもわずかに遅いだけで機能に問題はない
+
+git clone https://github.com/rakou1986/open-aoe2-jp.git
+cd open-aoe2-jp
+起動確認
+uvicorn main:app --host 0.0.0.0 --port 8080
+
+[ドメインに証明書をセットする]
+DDNSなどでドメイン取得して浸透を待つ
+
+curl https://get.acme.sh | sh
+source ~/.bashrc
+acme.sh --register-account -m YOUR@EMAIL
+acme.sh --issue --dns --yes-I-know-dns-manual-mode-enough-go-ahead-please -d your.domain.name
+MyDNSなら --dns dns_mydns にする
+出力の中から以下を探す
+Domain: '_acme_challenge' をサブドメインにセットする
+サブドメインに TXT value: 'ランダムな文字列' をセットする
+TXTレコードの浸透を待つ
+dig TXT _acme-challenge.your.domain.name
+TXTレコードにランダムな文字列がセットされているか確認
+acme.sh --renew -d your.domain.name
+acme.sh --install-cert -d your.domain.name --key-file ~/open-aoe2-jp/certs/open-aoe2-jp.key --fullchain-file ~/open-aoe2-jp/certs/open-aoe2-jp.fullchain.pem --ecc
+
+[証明書の自動更新]
+chmod +x open-aoe2-jp/restart-uvicorn.sh
+open-aoe2-jp/restart-uvicorn.sh の中のパスなどを環境に合わせる
+open-aoe2-jp/crontab.txtを参考にcrontab -eをセット
+
+[起動確認]
+ルーターで適切にポートフォワーディングを設定する
+restart-uvicorn.sh
+外から https://your.domain.name/ を見て、証明書の警告が出なければOK
