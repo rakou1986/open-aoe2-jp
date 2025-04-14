@@ -1,2 +1,6 @@
 certs/
 __pycache__/
+bot_settings.py
+secret.py
+canary_token.txt
+token.txt
