@@ -17,8 +17,6 @@ jp = """\
   無理矢理部屋を消す（干しっぱなし用、管理者使用推奨） --force-bakuha-tekumakumayakonn-tekumakumayakonn 部屋番号
   つかいかたを出す --help
   How to use in English: --help-en
-  埋まり時のURLのつかいかた(warzone) --help-warzone-url
-  埋まり時のURLのつかいかた(lazuaoe) --help-lazuaoe-url
 ```
 """
 
@@ -60,76 +58,6 @@ Others
     tekumaku mayakonn is the magical words in Japan.
   日本語でつかいかたを出す: --help
   See this help: --help-en
-```
-"""
-
-warzone_url = """\
-```
-最近のChromeでの使い方
-
-拡張機能のTampermonkeyを追加
-https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo
-
-Tampermonkeyは、特定のURLに対して自分でJavaScriptを追加できる機能。
-見た目をいじったり、いろいろできる。
-
-https://github.com/rakou1986/bot4wz/blob/main/userscript_for_warzone.js
-を開いて、「↓」みたいなアイコンでダウンロードする。
-
-Chromeの右上あたりにあるTampermonkeyのアイコンを右クリックしてオプションを開く。
-Tampermonkeyの設定画面に、userscript_for_warzone.jsをドラッグ＆ドロップ。
-インストールを押す。
-
-別のタブでuserscript_for_warzone.jsのテキストが開いた場合は閉じる。
-Tampermonkeyのタブに戻り、インストール済みUserScriptを開く。
-rakou_bot parameter mapper for warzone がインストールされていて、有効になっていることを確認。
-
-埋まった時にbotが出すURLをクリックすると、参加者名が入力済みの画面が出る。
-
-この機能は似たものを見つけるためのrapidfuzzライブラリを使用していて、
-Discord上の名前とwarzoneレートサイト上の名前を見比べて、
-類似度が最も高いものを取り出し、それが十分似ている場合は
-warzoneレートサイト上の名前が自動で入力される。
-類似度が低い場合は**[Discord上の名前]が入力される。
-
-類似度が高くても、そっくりさんは誤って入力される可能性がある。
-
-Discordのサーバープロフィール名をwarzoneレートサイト上の名前に近づけると、使い勝手が向上する。
-```
-"""
-
-lazuaoe_url = """\
-```
-最近のChromeでの使い方
-
-拡張機能のTampermonkeyを追加
-https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo
-
-Tampermonkeyは、特定のURLに対して自分でJavaScriptを追加できる機能。
-見た目をいじったり、いろいろできる。
-
-https://github.com/rakou1986/bot4wz/blob/main/userscript_for_lazuaoe.js
-を開いて、「↓」みたいなアイコンでダウンロードする。
-
-Chromeの右上あたりにあるTampermonkeyのアイコンを右クリックしてオプションを開く。
-Tampermonkeyの設定画面に、userscript_for_lazuaoe.jsをドラッグ＆ドロップ。
-インストールを押す。
-
-別のタブでuserscript_for_lazuaoe.jsのテキストが開いた場合は閉じる。
-Tampermonkeyのタブに戻り、インストール済みUserScriptを開く。
-rakou_bot parameter mapper for lazuaoe がインストールされていて、有効になっていることを確認。
-
-埋まった時にbotが出すURLをクリックすると、参加者名が入力済みの画面が出る。
-
-この機能は似たものを見つけるためのrapidfuzzライブラリを使用していて、
-Discord上の名前とlazuaoeレートサイト上の名前を見比べて、
-類似度が最も高いものを取り出し、それが十分似ている場合は
-lazuaoeレートサイト上の名前が自動で入力される。
-類似度が低い場合は**[Discord上の名前]が入力される。
-
-類似度が高くても、そっくりさんは誤って入力される可能性がある。
-
-Discordのサーバープロフィール名をlazuaoeレートサイト上の名前に近づけると、使い勝手が向上する。
 ```
 """
 
@@ -175,21 +103,6 @@ botを起動後、botが1回応答すると、5つの.pickleファイルが作�
 
 at_launch = """\
 
-終了するには必ずこのウインドウでCtrl+Cを押してください。
-ほとんどの場合、Ctrl+Cを押してからbotが反応するまでに時間がかかります。お待ちください。
-実行中にWindowsを終了したり、閉じるボタンを押したり、タスクバーからウインドウを閉じたり、タスクマネージャから終了しないでください。
-
-Windows10では閉じるボタンは無効になります。
-
-Windows11では既定のターミナルアプリケーションがWindowsコンソールホストなら閉じるボタンが無効になります。
-うっかり閉じてしまわないためには以下の手順を実行してください。
-  1. Windows Terminalを開く
-  2. タブバーの空白部分を右クリックし、設定を開く
-  3. 既定のターミナルアプリケーションをWindowsコンソールホストに設定し、保存
-  4. Ctrl+Cでこのbotを終了する。
-  5. 15分ほど待つ
-  （待たなくてもいいですが、botの多重起動でチャンネルがカオスになるのを防ぐ機構に引っ掛かります）
-  6. botを再度起動
-
-部屋の状態などを保存するための.pickleファイルが5つ作られますが、触らないでください。
+終了するには Ctrl + C または kill -SIGINT <pid>
+部屋の状態などを保存するための.pickleファイルが3つ作られますが、触らないでください。
 """
