@@ -1,16 +1,16 @@
 #coding: utf-8
-#!/path/to/Python_3.6.3
+#!/path/to/Python_3.12.10
 
-_debug = False
+_debug = True
 
 """
 [requirements]
-
 python -V
-Python 3.6.3 :: Anaconda, Inc.
+Python 3.12.10
 
 pip show discord
-Version: 1.7.3
+#Version: 1.7.3
+Version: 2.3.2
 
 [discord developer setting]
 Bot:
@@ -35,8 +35,6 @@ $ python bot4wz.py
 Ctrl + C
 """
 
-import aiohttp
-import ast
 import asyncio
 from datetime import datetime, timedelta
 import json
@@ -49,8 +47,6 @@ import socket
 import sys
 import time
 import urllib
-import win32gui
-import win32con
 
 import discord
 from discord.ext import commands
@@ -100,13 +96,13 @@ allowed_mentions = discord.AllowedMentions(users=True)
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 bot_commands = [
-    "--yyk", "--call", "--create", "--reserve", "--heybros", "--lzyyk",
+    "--yyk", "--call", "--create", "--reserve", "--heybros",
     "--bakuha", "--del", "--cancel", "--destroy", "--hakai", "--explosion",
     "--no", "--in", "--join",
     "--nuke", "--out", "--leave", "--dismiss",
     "--rooms",
     "--force-bakuha-tekumakumayakonn-tekumakumayakonn",
-    "--help", "--help-en", "--help-warzone-url", "--help-lazuaoe-url",
+    "--help", "--help-en",
     ] + secret_commands
 room_number_pool = list(range(1, 100))
 room_number_pool_file = ".bot4wz.room_number_pool.pickle"
@@ -115,17 +111,12 @@ rooms_file = ".bot4wz.rooms.pickle"
 temp_message_ids = []
 temp_message_ids_file = ".bot4wz.temp_message_ids.pickle"
 last_process_message_timestamp = datetime.utcnow()
-last_running = None
-warzone_players = []
-warzone_players_file = ".bot4wz.warzone_players.pickle"
-warzone_players_url = "http://warzone.php.xdomain.jp/?action=Rate"
-lazuaoe_players = []
-lazuaoe_players_file = ".bot4wz.lazuaoe_players.pickle"
-lazuaoe_players_url = "http://lazuaoe.php.xdomain.jp/rate/?act=ply"
+
 
 class RoomNumberExhaust(BaseException):
     def __init__(self):
         pass
+
 
 class RoomPicklable(object):
 
@@ -137,7 +128,6 @@ class RoomPicklable(object):
         self.capacity = room.capacity
         self.garbage_queue = room.garbage_queue
         self.last_notice_timestamp = room.last_notice_timestamp
-        self.rating_system = room.rating_system
 
     async def to_room(self, bot):
         guild = bot.get_guild(guild_id)
@@ -156,7 +146,7 @@ class RoomPicklable(object):
                 members.append(member)
             except discord.NotFound:
                 continue
-        room = Room(author=owner, name=self.name, capacity=self.capacity, rating_system=self.rating_system)
+        room = Room(author=owner, name=self.name, capacity=self.capacity)
         room.number = self.number
         room.members = members
         room.garbage_queue = self.garbage_queue
@@ -166,7 +156,7 @@ class RoomPicklable(object):
 
 class Room(object):
 
-    def __init__(self, author , name, capacity, rating_system):
+    def __init__(self, author , name, capacity):
         try:
             self.number = room_number_pool.pop(0)
         except IndexError:
@@ -177,7 +167,6 @@ class Room(object):
         self.capacity = capacity
         self.garbage_queue = []
         self.last_notice_timestamp = datetime.utcnow()
-        self.rating_system = rating_system
 
 
 async def save():
@@ -188,10 +177,6 @@ async def save():
         pickle.dump(room_number_pool, f)
     with open(temp_message_ids_file, "wb") as f:
         pickle.dump(temp_message_ids, f)
-    with open(warzone_players_file, "wb") as f:
-        pickle.dump(warzone_players, f)
-    with open(lazuaoe_players_file, "wb") as f:
-        pickle.dump(lazuaoe_players, f)
 
 async def load(bot):
     global rooms
@@ -216,20 +201,6 @@ async def load(bot):
                 temp_message_ids = pickle.load(f)
             except Exception as e:
                 pass
-    global warzone_players
-    if os.path.exists(warzone_players_file):
-        with open(warzone_players_file, "rb") as f:
-            try:
-                warzone_players = pickle.load(f)
-            except Exception as e:
-                pass
-    global lazuaoe_players
-    if os.path.exists(lazuaoe_players_file):
-        with open(lazuaoe_players_file, "rb") as f:
-            try:
-                lazuaoe_players = pickle.load(f)
-            except Exception as e:
-                pass
 
 def to_int(string):
     try:
@@ -249,34 +220,13 @@ def delete_room(room):
     room_number_pool.append(room.number)
     room_number_pool.sort()
 
-def create_customized_url(room):
-    members = []
-    # room.rating_system in ["warzone", "lazuaoe"] = True が保障されている
-    if room.rating_system == "warzone":
-        url_base = "http://warzone.php.xdomain.jp/?action=NewGame&rakou_bot_param_members="
-        players = warzone_players
-    if room.rating_system == "lazuaoe":
-        url_base = "http://lazuaoe.php.xdomain.jp/rate/?act=mkt&rakou_bot_param_members="
-        players = lazuaoe_players
-    for user in room.members:
-        name = get_name(user)
-        match, similarity_score, idx = rapidfuzz.process.extractOne(name, players)
-        if 55 < similarity_score:
-            name = match
-        else:
-            name = "**" + name
-        members.append(name)
-    url = "".join([url_base, urllib.parse.quote(json.dumps(members, ensure_ascii=False))])
-    discord_compatible_url = f"<{url}>"
-    return discord_compatible_url
-
 async def process_message(message):
     async with lock:
         reply = "初期値。問題が起きているのでrakouに連絡"
         room_to_clean = None
         temp_message = False
 
-        for command in ["--yyk", "--call", "--create", "--reserve", "--heybros", "--lzyyk"]:
+        for command in ["--yyk", "--call", "--create", "--reserve", "--heybros"]:
             if message.content.startswith(command):
                 capacity = 8
                 name = message.content.split(command)[1]
@@ -284,16 +234,9 @@ async def process_message(message):
                     if name[0] in ["1", "2", "3", "4", "5", "6", "１", "２", "３", "４", "５", "６"]:
                         capacity = to_int(name[0]) + 1
                         name = name.replace(name[0], "")
-                if not name:
-                    if command == "--lzyyk":
-                        name = "LN"
-                    else:
-                        name = "無制限"
-                else:
-                    name = name.strip()
-                rating_system = "lazuaoe" if command == "--lzyyk" else "warzone"
+                name = "無制限" if not name else name.strip()
                 try:
-                    room = Room(author=message.author, name=name, capacity=capacity, rating_system=rating_system)
+                    room = Room(author=message.author, name=name, capacity=capacity)
                     rooms.append(room)
                     reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
                     room_to_clean = room
@@ -387,7 +330,7 @@ async def process_message(message):
                                 temp_message = True
                 if room is not None:
                     if len(room.members) == room.capacity:
-                        reply = f"[IN] `{get_name(message.author)}`\n" + f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + " ".join(f"{member.mention}" for member in room.members) + ("\n" + create_customized_url(room) if room.capacity in [6, 8] else "")
+                        reply = f"[IN] `{get_name(message.author)}`\n" + f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + " ".join(f"{member.mention}" for member in room.members)
                         delete_room(room)
                         room_to_clean = room
 
@@ -481,14 +424,6 @@ async def process_message(message):
             reply = usage.en
             temp_message = True
 
-        if message.content.startswith("--help-warzone-url"):
-            reply = usage.warzone_url
-            temp_message = True
-
-        if message.content.startswith("--help-lazuaoe-url"):
-            reply = usage.lazuaoe_url
-            temp_message = True
-
         if secret_commands and process_secret_commands:
             for command in secret_commands:
                 if message.content.startswith(command):
@@ -565,26 +500,6 @@ async def temp_message_cleaner():
                         pass
             temp_message_ids.clear()
 
-async def report_survive():
-    global last_running
-    while True:
-        if on_ready_complete.is_set():
-            break
-        await asyncio.sleep(1)
-    if quit.is_set():
-        return
-    channel = bot.get_channel(status_channel_id)
-    hostname = socket.gethostname()
-    if channel:
-        await channel.send(f"{bot.user.id} launch on {hostname}")
-    while True:
-        if channel:
-            sent_message = await channel.send(f"{bot.user.id} running on {hostname}")
-            if last_running is not None:
-                await last_running.delete()
-            last_running = sent_message
-        await asyncio.sleep(300)
-
 async def close_bot():
     while True:
         if quit.is_set():
@@ -596,102 +511,13 @@ async def close_bot():
     await bot.wait_until_ready()
     await bot.close()
 
-async def list_warzone_players():
-    global warzone_players
-    while True:
-        if on_ready_complete.is_set():
-            break
-        await asyncio.sleep(1)
-    if quit.is_set():
-        return
-    retry = False
-    while True:
-        if retry:
-            await asyncio.sleep(60)
-        timeout = aiohttp.ClientTimeout(total=15)
-        try:
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(warzone_players_url) as response:
-                    html = await response.text()
-                    html = html.replace("\r", "")
-            match = re.search(r"var\s+UserData\s*=\s*(\[\s*(?:\[.*?\],?\s*)+\]);", html, re.DOTALL)
-            if match:
-                array_text = match.group(1)
-                array_text = array_text.replace("null", "None").replace("true", "True").replace("false", "False")
-                user_data = ast.literal_eval(array_text)
-                warzone_players = [row[1] for row in user_data]
-                retry = False
-                await asyncio.sleep(3600)
-            else:
-                # htmlに問題がありvar UserDataが見つからない
-                retry = True
-                continue
-        except asyncio.TimeoutError:
-            retry = True
-            continue
-        except asyncio.CancelledError:
-            break
-        except Exception as e:
-            # 通信エラーなどで正しいHTMLが得られずにvar UserDataを扱っているときに問題が起きた
-            retry = True
-            continue
-
-async def list_lazuaoe_players():
-    global lazuaoe_players
-    while True:
-        if on_ready_complete.is_set():
-            break
-        await asyncio.sleep(1)
-    if quit.is_set():
-        return
-    retry = False
-    while True:
-        if retry:
-            await asyncio.sleep(300)
-        timeout = aiohttp.ClientTimeout(total=15)
-        try:
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(lazuaoe_players_url) as response:
-                    html = await response.text()
-            lines = html.split("\n")
-            idx = lines.index("var PlayerList = [")
-            array_text = "".join(lines[idx:idx+3]).replace("var PlayerList = ", "")[:-1]
-            player_list = ast.literal_eval(array_text)
-            lazuaoe_players = [player[0] for player in player_list]
-            retry = False
-            await asyncio.sleep(43200) # 12時間
-        except asyncio.TimeoutError:
-            retry = True
-            continue
-        except asyncio.CancelledError:
-            break
-        except Exception as e:
-            # 通信エラーなどで正しいHTMLが得られずにvar PlayerListを扱っているときに問題が起きた
-            retry = True
-            continue
-
 @bot.event
 async def on_ready():
-    # already_running()がPC上での重複起動を防ぐのに対して、botの生存実績を見て、他の人がbotを実行中に重複実行を防ぐ
-    channel = bot.get_channel(status_channel_id)
-    if channel:
-        messages = await channel.history(limit=1).flatten()
-        if messages:
-            message = messages[0]
-            if message.content.startswith(f"{bot.user.id} running"):
-                delta = datetime.utcnow() - message.created_at.replace(tzinfo=None)
-                if delta.total_seconds() < 900:
-                    print("botが実行中であることをbot自身がステータスチャンネル # bot_status に報告してから間もないため他のPCでbotが実行されている可能性があります。多重実行を防ぐためbotを実行せずに終了します。")
-                    await asyncio.sleep(10)
-                    quit.set()
-                    return
-
     print("前回の状態を読み取り中。")
     await load(bot)
     print("読み取り完了。botを実行します。")
     print(f"{bot.user}でDicordにログインしました。")
     print(usage.at_launch)
-
     on_ready_complete.set()
 
 @bot.event
@@ -718,57 +544,26 @@ async def on_message(message):
                 break
     await bot.process_commands(message)
 
-def disable_close_button():
-    # うっかり閉じるボタンで終了しないように、閉じるボタンを無効化する
-    hwnd = win32gui.GetForegroundWindow()
-    if hwnd:
-        menu = win32gui.GetSystemMenu(hwnd, False)
-        try:
-            win32gui.RemoveMenu(menu, win32con.SC_CLOSE, win32con.MF_BYCOMMAND)
-        except Exception:
-            # シェルで2回目に実行するとボタンがないので例外が出る
-            pass
-        win32gui.DrawMenuBar(hwnd)
-
 def already_running():
     # うっかりbotを重複起動しちゃうのを防止
-    current = psutil.Process()
-    current_pid = current.pid
-    parent_pid = current.ppid()
+    current_pid = os.getipd()
     for proc in psutil.process_iter(attrs=["pid", "cmdline"]):
         try:
-            cmdline = " ".join(proc.info["cmdline"])
-            if "bot4wz.py" in cmdline and proc.info["pid"] != current_pid and not "cmd" in proc.info["cmdline"]:
-                return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            continue
-        except TypeError:
-            pass
-    for proc in psutil.process_iter(attrs=["pid", "exe"]):
-        try:
-            if proc.pid in (current_pid, parent_pid):
+            if proc.info["pid"] == current_pid:
                 continue
-            proc_exe = proc.info["exe"]
-            if not proc_exe:
-                continue
-            if "bot4wz.exe" == os.path.basename(proc_exe):
-                return True
-            if "bot4wz.exe" == proc.name().lower():
+            cmdline = proc.info["cmdline"]
+            if cmdline and "bot4wz.py" in " ".join(cmdline):
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return False
 
 def main():
-    disable_close_button()
     loop = asyncio.get_event_loop()
     tasks = []
     tasks.append(loop.create_task(temp_message_cleaner()))
-    tasks.append(loop.create_task(report_survive()))
     tasks.append(loop.create_task(close_bot()))
     tasks.append(loop.create_task(notice_rooms()))
-    tasks.append(loop.create_task(list_warzone_players()))
-    tasks.append(loop.create_task(list_lazuaoe_players()))
     asyncio.gather(*tasks, return_exceptions=True) # ssl.SSLErrorの出所を探るため、例外がタスクから来た場合に Ctrl+C を押すまで保留する
     try:
         loop.run_until_complete(bot.start(TOKEN))
@@ -777,7 +572,6 @@ def main():
     except discord.errors.LoginFailure:
         print("botがDiscordにログインできませんでした。有効なトークンをtoken.txtに保存してください。")
         print("トークンが有効ならば、Discordに問題が起きているかもしれません。")
-        time.sleep(10)
     finally:
         for task in tasks:
             task.cancel()
@@ -788,12 +582,11 @@ def main():
         if not bot.is_closed():
             loop.run_until_complete(bot.close())
         loop.close()
-        print("10秒後に終了します。")
-        time.sleep(10)
+        print("bye")
+        sys.exit(0)
 
 if __name__ == "__main__":
     if already_running():
-        print("すでに実行中のbot4wz.pyまたはbot4wz.exeがあるのでbotを開始せず10秒後に終了します")
-        time.sleep(10)
+        print("すでに実行中のbot4wz.pyがあるのでbotを開始せずに終了します")
         sys.exit(0)
     main()
