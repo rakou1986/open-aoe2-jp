@@ -560,7 +560,8 @@ def already_running():
     return False
 
 def main():
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     tasks = []
     tasks.append(loop.create_task(temp_message_cleaner()))
     tasks.append(loop.create_task(close_bot()))
