@@ -83,7 +83,7 @@ if TOKEN is None:
     sys.exit(0)
 
 def now():
-    return datetime.now(timezone.utc)
+    return datetime.now()
 
 lock = asyncio.Lock()
 on_ready_complete = asyncio.Event()
