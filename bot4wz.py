@@ -552,7 +552,8 @@ def already_running():
             if proc.info["pid"] == current_pid:
                 continue
             cmdline = proc.info["cmdline"]
-            if cmdline and "bot4wz.py" in " ".join(cmdline):
+            str_ = "".join(cmdline)
+            if str_ and "bot4wz.py" in str_ and "python" in str_:
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
