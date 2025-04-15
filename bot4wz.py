@@ -54,16 +54,13 @@ import rapidfuzz
 
 TOKEN = None
 
-status_channel_id = 0
 
 if _debug:
     token_file = "canary_token.txt"
-    from bot_settings import canary_bot_status_channel_id as status_channel_id
     from bot_settings import canary_bot_target_channel_id as target_channel_id
     from bot_settings import canary_bot_server_id as guild_id
 else:
     token_file = "token.txt"
-    from bot_settings import available_bot_status_channel_id as status_channel_id
     from bot_settings import available_bot_target_channel_id as target_channel_id
     from bot_settings import available_bot_server_id as guild_id
 import usage
