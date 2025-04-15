@@ -36,6 +36,7 @@ Ctrl + C
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
 import pickle
@@ -137,9 +138,11 @@ class RoomPicklable(object):
         self.capacity = room.capacity
         self.garbage_queue = room.garbage_queue
         self.last_notice_timestamp = room.last_notice_timestamp
+        self.ladder = room.ladder
         self.team1 = room.team1
         self.team2 = room.team2
         self.fighting = room.fighting
+        self.win_team = room.win_team
 
     async def to_room(self, bot):
         guild = bot.get_guild(guild_id)
@@ -158,7 +161,7 @@ class RoomPicklable(object):
                 members.append(member)
             except discord.NotFound:
                 continue
-        room = Room(author=owner, name=self.name, capacity=self.capacity)
+        room = Room(author=owner, name=self.name, capacity=self.capacity, ladder=self.ladder)
         room.number = self.number
         room.members = members
         room.garbage_queue = self.garbage_queue
@@ -166,12 +169,13 @@ class RoomPicklable(object):
         room.team1 = self.team1
         room.team2 = self.team2
         room.fighting = self.fighting
+        room.win_team = self.win_team
         return room
 
 
 class Room(object):
 
-    def __init__(self, author , name, capacity):
+    def __init__(self, author , name, capacity, ladder):
         try:
             self.number = room_number_pool.pop(0)
         except IndexError:
@@ -182,34 +186,164 @@ class Room(object):
         self.capacity = capacity
         self.garbage_queue = []
         self.last_notice_timestamp = now()
+        self.ladder = ladder
+        # team1, team2にはself.membersの中にあるDiscord.UserではなくPlayerを入れる。
+        # message.author.idでPlayerが見つからなければ作って入れる
         self.team1 = []
         self.team2 = []
         self.fighting = False
+        self.win_team = None
 
 
 class Player(object):
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
+
+    def __init__(self, user, ladder_rate={key: 8000 for key in ladder_dict.keys()}, rating_booster=30):
+        self.id = user.id
+        self.name = user.name
         self.rate_history = {}
-        self.rating_booster = 30 # 最大値30。新規は30、久しぶりは15加算。何回久しぶりになっても30まで。
+        self.rating_booster = rating_booster # 最大値30。新規は30、久しぶりは15加算。何回久しぶりになっても30まで。
         for ladder in ladder_dict.keys():
             self.rate_history.update({
                 ladder: [{
-                    "rate": 5000,
+                    "rate": ladder_rate[ladder],
                     "timestamp": now(),
                 }]
             })
 
+    def win_ratio_last(go_back, ladder):
+        rates = [record["rate"] for record in self.rate_history[ladder][-go_back -1:]]
+        win = 0
+        lose = 0
+        prev = rates.pop(0)
+        if not rates:
+            return 0
+        for next_ in rate:
+            if prev < next_:
+                win += 1
+            else:
+                lost += 1
+            prev = next_
+        return win / (win + lose)
+
+    def streak(ladder):
+        idx = -1
+        streak = 0
+        rates = [record["rate"] for record in self.rate_history[ladder]]
+        next_ = rates[idx]
+        for i in range(len(rates) - 1):
+            idx -= 1
+            prev = rates[idx]
+            if prev < next_:
+                if 0 <= streak:
+                    streak += 1
+                else:
+                    break
+            else:
+                if streak <= 0:
+                    streak -= 1
+                else:
+                    break
+            next_ = prev
+        return streak
+
+    def latest_rate(ladder):
+        return self.rate_history[ladder][-1]["rate"]
+
+    def latest_timestamp(ladder):
+        return self.rate_history[ladder][-1]["timestamp"]
+
 
 class Game(object):
-    def __init__(self, id, ladder, team1, team2, won_team):
+    def __init__(self, id, host_id, ladder, team1_deltas, team2_deltas, win_team):
         self.id = id
+        self.host_id = host_id
         self.ladder = ladder
-        self.team1 = team1
-        self.team2 = team2
+        self.team1_deltas = team1
+        self.team2_deltas = team2
         self.timestamp = now()
-        self.won_team = won_team
+        self.win_team = win_team
+
+
+async def customized_elo_rating(room):
+    """
+    スマーフ対策済み、適正値に早く近づくメンテフリーなELOレーティング
+    """
+    ladder = room.ladder
+    players = room.team1 + room.team2
+
+    Ra = sum(player.latest_rate(ladder) for player in room.team1)
+    Rb = sum(player.latest_rate(ladder) for player in room.team2)
+
+    deltas = {}
+    for player in players:
+        player_team = 1 if player in room.team1 else 2
+        win = room.win_team == player_team
+
+        team_rate = Ra if player_team == 1 else Rb
+        opponent_rate = Rb if player_team == 1 else Ra
+
+        # イロレーティングはチェス(1v1)なので、チームレート差のスケールを合わせたほうがよい。例えば4v4なら1/4、3v3なら1/3。
+        Ea = 1.0 / (1 + 10 ** ( ((opponent_rate - team_rate) / len(players) / 2) / 400.0))
+        Sa = 1 if win else 0
+        K = customized_k_factor(player, room, win, Ra, Rb)
+        delta = K * (Sa - Ea)
+        delta = int(Decimal(delta).quantize(Decimal("0"), ROUND_HALF_UP))
+        delta = max(1, delta)
+
+        player.rate_history[ladder].append({
+            "rate": player.latest_rate(ladder) + delta,
+            "timestamp": now()
+        })
+        deltas.append({"name": player.name, "delta": delta})
+
+    team1_deltas = [(player.name, deltas[player.name]) for player in room.team1]
+    team2_deltas = [(player.name, deltas[player.name]) for player in room.team2]
+    games.append(
+        Game(id=len(games)+1, host_id=room.owner.id, ladder=ladder,
+        team1_deltas=team1_deltas, team2_deltas=team2_deltas, win_team=room.win_team)
+    )
+
+    await save_rating_system()
+    return result
+
+
+def customized_k_factor(player, room, win):
+    base_K = 26 # たまひよが約26
+    ladder = room.ladder
+
+    # 復帰者に補正をつける
+    if timedelta(days=90) < now() - player.latest_timestamp:
+        player.rating_booster = min(30, player.rating_booster + 15)
+    # player.rating_boosterの初期値30、最大30。
+    boost_ratio = 1.0 + 14 * player.rating_booster / 30
+    winrate_ratio = 1.0
+    streak_ratio = 1.0
+    streak = player.streak(ladder)
+
+    if 0 < player.rating_booster:
+        # スマーフ対策
+        # 新規登録から間もないほど補正を強く。復帰から間もないほど補正を強く。
+        matches = min(30, len(player.rate_history[ladder]) - 1)
+        # 連敗が続くほど補正を減らす
+        # 試合数が増えるにつれて補正の減らし方を穏やかにする
+        weight = 1 + (30 / (matches + 1))
+        if streak < -1:
+            boost_ratio *= 0.90 ** (abs(streak) * weight)
+        # 連敗ではなかろうが勝率でも負けすぎは補正を減らす
+        if 4 < matches:
+            win_ratio = player.win_ratio_last(30, ladder)
+            if win_ratio < 0.5:
+                boost_ratio *= 0.988 ** ((0.5 - win_ratio) * 100 * weight)
+        player.rating_booster -= 1
+    else:
+        # いつもやってる人（ブーストなし）は最近30戦で1％勝ち越す/負け越すごとに5％補正
+        win_ratio = player.win_ratio_last(30, ladder)
+        winrate_ratio = 1 + 0.05 * abs(0.5 - win_ratio) * 100
+        # 連勝・連敗補正
+        if 1 < abs(streak):
+            streak_ratio = 1.0 + 0.08 * abs(streak)
+
+    return base_K * boost_ratio * winrate_ratio * streak_ratio
 
 
 async def save_rating_system(backup=False):
