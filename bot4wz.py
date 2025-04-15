@@ -192,6 +192,7 @@ class Player(object):
         self.id = id
         self.name = name
         self.rate_history = {}
+        self.rating_booster = 30 # 最大値30。新規は30、久しぶりは15加算。何回久しぶりになっても30まで。
         for ladder in ladder_dict.keys():
             self.rate_history.update({
                 ladder: [{
@@ -272,7 +273,6 @@ async def load(bot):
                 games = pickle.load(f)
             except Exception as e:
                 pass
-
 
 
 def to_int(string):
