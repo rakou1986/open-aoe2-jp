@@ -25,7 +25,7 @@ pkg install python git wget openssl socat vim which openssl-tool cronie dnsutils
 crond
 .bashrcにsshd, crondを入れる
 pip install --upgrade pip setuptools wheel
-pip install ipython requests discord rapidfuzz
+pip install ipython requests discord rapidfuzz psutil
 which nano
 パスをメモ
 which vim
