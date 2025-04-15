@@ -36,7 +36,7 @@ Ctrl + C
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 import pickle
@@ -86,6 +86,9 @@ if TOKEN is None:
     input("Enterを押して終了: ")
     sys.exit(0)
 
+def now():
+    return datetime.now(timezone.utc)
+
 lock = asyncio.Lock()
 on_ready_complete = asyncio.Event()
 quit = asyncio.Event()
@@ -110,7 +113,7 @@ rooms = []
 rooms_file = ".bot4wz.rooms.pickle"
 temp_message_ids = []
 temp_message_ids_file = ".bot4wz.temp_message_ids.pickle"
-last_process_message_timestamp = datetime.utcnow()
+last_process_message_timestamp = now()
 
 
 class RoomNumberExhaust(BaseException):
@@ -166,7 +169,7 @@ class Room(object):
         self.members = [author]
         self.capacity = capacity
         self.garbage_queue = []
-        self.last_notice_timestamp = datetime.utcnow()
+        self.last_notice_timestamp = now()
 
 
 async def save():
@@ -293,7 +296,7 @@ async def process_message(message):
                         room = rooms[0]
                         if not message.author in room.members:
                             room.members.append(message.author)
-                            room.last_notice_timestamp = datetime.utcnow()
+                            room.last_notice_timestamp = now()
                             reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[IN] `{get_name(message.author)}`"
                             room_to_clean = room
                         else:
@@ -322,7 +325,7 @@ async def process_message(message):
                         else:
                             if not message.author in room.members:
                                 room.members.append(message.author)
-                                room.last_notice_timestamp = datetime.utcnow()
+                                room.last_notice_timestamp = now()
                                 reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[IN] `{get_name(message.author)}`"
                                 room_to_clean = room
                             else:
@@ -351,7 +354,7 @@ async def process_message(message):
                             temp_message = True
                         else:
                             room.members.pop(room.members.index(message.author))
-                            room.last_notice_timestamp = datetime.utcnow()
+                            room.last_notice_timestamp = now()
                             reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[OUT] `{get_name(message.author)}`"
                             room_to_clean = room
                     elif len(entered_rooms) == 0:
@@ -383,7 +386,7 @@ async def process_message(message):
                                 temp_message = True
                             else:
                                 room.members.pop(room.members.index(message.author))
-                                room.last_notice_timestamp = datetime.utcnow()
+                                room.last_notice_timestamp = now()
                                 reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[OUT] `{get_name(message.author)}`"
                                 room_to_clean = room
 
@@ -432,7 +435,7 @@ async def process_message(message):
                     break
 
         global last_process_message_timestamp
-        last_process_message_timestamp = datetime.utcnow()
+        last_process_message_timestamp = now()
 
         return reply, room_to_clean, temp_message
 
@@ -462,11 +465,11 @@ async def notice_rooms():
     while True:
         await asyncio.sleep(3)
         for room in rooms:
-            if timedelta(minutes=8) <= datetime.utcnow() - room.last_notice_timestamp:
+            if timedelta(minutes=8) <= now() - room.last_notice_timestamp:
                 line = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
                 sent_message = await channel.send(line, allowed_mentions=allowed_mentions)
                 room.garbage_queue.append(sent_message.id)
-                room.last_notice_timestamp = datetime.utcnow()
+                room.last_notice_timestamp = now()
                 while True:
                     if 1 < len(room.garbage_queue):
                         message_id = room.garbage_queue.pop(0)
@@ -489,7 +492,7 @@ async def temp_message_cleaner():
         return
     while True:
         await asyncio.sleep(3)
-        if timedelta(minutes=2) <= datetime.utcnow() - last_process_message_timestamp:
+        if timedelta(minutes=2) <= now() - last_process_message_timestamp:
             for channel_id, message_id in temp_message_ids:
                 channel = bot.get_channel(channel_id)
                 if channel:
@@ -530,7 +533,7 @@ async def on_message(message):
     if message.channel.id == target_channel_id:
         for command in bot_commands:
             if message.content.startswith(command):
-                jst = datetime.utcnow() + timedelta(hours=9)
+                jst = now() + timedelta(hours=9)
                 print(f"INPUT:\n{message.content}\n{jst}\n")
                 reply, room_to_clean, temp_message = await process_message(message)
                 sent_message = await message.channel.send(reply, allowed_mentions=allowed_mentions)
@@ -538,7 +541,7 @@ async def on_message(message):
                     await room_cleaner(room_to_clean, message, sent_message)
                 if temp_message:
                     temp_message_ids.append( (message.channel.id, sent_message.id) )
-                jst = datetime.utcnow() + timedelta(hours=9)
+                jst = now() + timedelta(hours=9)
                 print(f"OUTPUT:\n{reply}\n{jst}\n")
                 await save()
                 break
