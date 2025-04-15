@@ -87,7 +87,6 @@ def now():
 
 lock = asyncio.Lock()
 on_ready_complete = asyncio.Event()
-quit = asyncio.Event()
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -454,8 +453,6 @@ async def notice_rooms():
         if on_ready_complete.is_set():
             break
         await asyncio.sleep(1)
-    if quit.is_set():
-        return
     channel = bot.get_channel(target_channel_id)
     if not channel:
         return
@@ -485,8 +482,6 @@ async def temp_message_cleaner():
         if on_ready_complete.is_set():
             break
         await asyncio.sleep(1)
-    if quit.is_set():
-        return
     while True:
         await asyncio.sleep(3)
         if timedelta(minutes=2) <= now() - last_process_message_timestamp:
@@ -499,17 +494,6 @@ async def temp_message_cleaner():
                     except discord.NotFound:
                         pass
             temp_message_ids.clear()
-
-async def close_bot():
-    while True:
-        if quit.is_set():
-            break
-        if on_ready_complete.is_set():
-            return
-        await asyncio.sleep(1)
-    await asyncio.sleep(1)
-    await bot.wait_until_ready()
-    await bot.close()
 
 @bot.event
 async def on_ready():
@@ -564,7 +548,6 @@ def main():
     asyncio.set_event_loop(loop)
     tasks = []
     tasks.append(loop.create_task(temp_message_cleaner()))
-    tasks.append(loop.create_task(close_bot()))
     tasks.append(loop.create_task(notice_rooms()))
     asyncio.gather(*tasks, return_exceptions=True) # ssl.SSLErrorの出所を探るため、例外がタスクから来た場合に Ctrl+C を押すまで保留する
     try:
