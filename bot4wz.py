@@ -9,7 +9,6 @@ python -V
 Python 3.12.10
 
 pip show discord
-#Version: 1.7.3
 Version: 2.3.2
 
 [discord developer setting]
@@ -92,6 +91,7 @@ quit = asyncio.Event()
 
 intents = discord.Intents.default()
 intents.messages = True
+intents.message_content = True
 allowed_mentions = discord.AllowedMentions(users=True)
 bot = commands.Bot(command_prefix="!", intents=intents)
 
