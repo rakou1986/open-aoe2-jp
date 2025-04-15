@@ -569,6 +569,16 @@ async def temp_message_cleaner():
                         pass
             temp_message_ids.clear()
 
+async def daily_backup():
+    while True:
+        if on_ready_complete.is_set():
+            break
+        await asyncio.sleep(1)
+    while True:
+        await save_rating_system(backup=True)
+        tommorow_6 = (now() + timedelta(days=1)).replace(hour=6, minute=0, second=0, microsecond=0)
+        await asyncio.sleep( (tommorow_6 - now()).total_seconds() )
+
 @bot.event
 async def on_ready():
     print("前回の状態を読み取り中。")
@@ -623,6 +633,7 @@ def main():
     tasks = []
     tasks.append(loop.create_task(temp_message_cleaner()))
     tasks.append(loop.create_task(notice_rooms()))
+    tasks.append(loop.create_task(daily_backup()))
     asyncio.gather(*tasks, return_exceptions=True) # ssl.SSLErrorの出所を探るため、例外がタスクから来た場合に Ctrl+C を押すまで保留する
     try:
         loop.run_until_complete(bot.start(TOKEN))
