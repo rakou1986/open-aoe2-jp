@@ -546,7 +546,7 @@ async def on_message(message):
 
 def already_running():
     # うっかりbotを重複起動しちゃうのを防止
-    current_pid = os.getipd()
+    current_pid = os.getpid()
     for proc in psutil.process_iter(attrs=["pid", "cmdline"]):
         try:
             if proc.info["pid"] == current_pid:
