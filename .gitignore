@@ -2,6 +2,8 @@ certs/
 __pycache__/
 bot_settings.py
 secret.py
+token.txt
 canary_token.txt
 token.txt
 push
+*.pickle
