@@ -110,6 +110,16 @@ rooms_file = ".bot4wz.rooms.pickle"
 temp_message_ids = []
 temp_message_ids_file = ".bot4wz.temp_message_ids.pickle"
 last_process_message_timestamp = now()
+players = []
+players_file = ".bot4wz.players.pickle"
+games = []
+games_file = ".bot4wz.games.pickle"
+ladder_dict = {
+    "arabia": "アラビア系",
+    "LN": "遊牧系",
+    "michi": "みち",
+    "bakuran": "爆ラン",
+}
 
 
 class RoomNumberExhaust(BaseException):
@@ -127,6 +137,9 @@ class RoomPicklable(object):
         self.capacity = room.capacity
         self.garbage_queue = room.garbage_queue
         self.last_notice_timestamp = room.last_notice_timestamp
+        self.team1 = room.team1
+        self.team2 = room.team2
+        self.fighting = room.fighting
 
     async def to_room(self, bot):
         guild = bot.get_guild(guild_id)
@@ -150,6 +163,9 @@ class RoomPicklable(object):
         room.members = members
         room.garbage_queue = self.garbage_queue
         room.last_notice_timestamp = self.last_notice_timestamp
+        room.team1 = self.team1
+        room.team2 = self.team2
+        room.fighting = self.fighting
         return room
 
 
@@ -166,9 +182,51 @@ class Room(object):
         self.capacity = capacity
         self.garbage_queue = []
         self.last_notice_timestamp = now()
+        self.team1 = []
+        self.team2 = []
+        self.fighting = False
 
 
-async def save():
+class Player(object):
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+        self.rate_history = {}
+        for ladder in ladder_dict.keys():
+            self.rate_history.update({
+                ladder: [{
+                    "rate": 5000,
+                    "timestamp": now(),
+                }]
+            })
+
+
+class Game(object):
+    def __init__(self, id, ladder, team1, team2, won_team):
+        self.id = id
+        self.ladder = ladder
+        self.team1 = team1
+        self.team2 = team2
+        self.timestamp = now()
+        self.won_team = won_team
+
+
+async def save_rating_system(backup=False):
+    with open(players_file, "wb") as f:
+        pickle.dump(players, f)
+    with open(games_file, "wb") as f:
+        pickle.dump(games, f)
+    if backup:
+        players_backup = os.path.join("./backup", now().strftime("%Y-%m-%d") + players_file)
+        if not os.path.exists(players_backup):
+            with open(players_backup, "wb") as f:
+                pickle.dump(players, f)
+        games_backup = os.path.join("./backup", now().strftime("%Y-%m-%d") + games_file)
+        if not os.path.exists(games_backup):
+            with open(games_backup, "wb") as f:
+                pickle.dump(games, f)
+
+async def save_bot_state():
     rooms_picklable = [RoomPicklable(room) for room in rooms]
     with open(rooms_file, "wb") as f:
         pickle.dump(rooms_picklable, f)
@@ -200,6 +258,22 @@ async def load(bot):
                 temp_message_ids = pickle.load(f)
             except Exception as e:
                 pass
+    global players
+    if os.path.exists(players_file):
+        with open(players_file, "rb") as f:
+            try:
+                players = pickle.load(f)
+            except Exception as e:
+                pass
+    global games
+    if os.path.exists(games_file):
+        with open(games_file, "rb") as f:
+            try:
+                games = pickle.load(f)
+            except Exception as e:
+                pass
+
+
 
 def to_int(string):
     try:
@@ -474,7 +548,7 @@ async def notice_rooms():
                             pass
                     else:
                         break
-                await save()
+                await save_bot_state()
 
 async def temp_message_cleaner():
     global last_process_message_timestamp
@@ -524,7 +598,7 @@ async def on_message(message):
                     temp_message_ids.append( (message.channel.id, sent_message.id) )
                 jst = now() + timedelta(hours=9)
                 print(f"OUTPUT:\n{reply}\n{jst}\n")
-                await save()
+                await save_bot_state()
                 break
     await bot.process_commands(message)
 
