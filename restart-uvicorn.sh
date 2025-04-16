@@ -2,9 +2,9 @@
 
 cd ~/open-aoe2-jp/ || exit 1
 
-pkill -f "uvicorn main:app"
+pkill -f "uvicorn web:app"
 sleep 3
-nohup uvicorn main:app \
+nohup uvicorn web:app \
     --host 0.0.0.0 \
     --port 8443 \
     --ssl-keyfile ~/open-aoe2-jp/certs/open-aoe2-jp.key \
