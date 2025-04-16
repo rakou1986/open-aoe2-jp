@@ -632,6 +632,7 @@ async def process_message(message):
                             " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team1) + "\n",
                             f"チーム2:【{sum(player.latest_rate(room.ladder) for player in room.team2)}】\n",
                             " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team2) + "\n",
+                            ])
                         # delete_room(room) # --won, --lost コマンド実行時にgames.append(Game(...))をしてから消す。
                         # --won, --lost 実行までは対戦中の部屋として表示されて、爆破でキャンセル
                         room_to_clean = room
