@@ -47,7 +47,9 @@ import pickle
 import psutil
 import random
 import re
+from scipy.signal import find_peaks
 import socket
+import statistics
 import sys
 import time
 import urllib
@@ -268,6 +270,12 @@ class Game(object):
         self.timestamp = now()
         self.win_team = win_team
 
+def split(players):
+    half = len(players) // 2
+    delta_min = float("infinity")
+
+def process_umari(room):
+    pass
 
 def make_rate_histogram(players, ladder, bin_width=20):
     histogram = defaultdict(int)
@@ -277,43 +285,45 @@ def make_rate_histogram(players, ladder, bin_width=20):
         histogram[bucket] += 1
     return dict(sorted(histogram.items()))
 
-def pick_peak(histogram):
+def pick_peak_or_median(histogram, players, ladder):
     keys = list(histogram.keys())
     values = list(histogram.values())
     smooth = np.convolve(values, [1, 1, 1], mode="same")
-    max_idx = int(np.argmax(smooth))
-    return keys[max_idx]
+    peaks, properties = find_peaks(smooth)
+    if len(peaks) == 1:
+        max_idx = int(np.argmax(smooth))
+        return keys[max_idx], "peak"
+    else:
+        all_rates = [player.latest_rate(ladder) for player in players]
+        return int(statistics.median(all_rates)), "median"
 
-def draw_histogram_png(histogram, peak, ladder):
+def draw_histogram_png(histogram, value, ladder, method):
     fig, ax = plt.subplots()
     bins = list(histogram.keys())
     values = list(histogram.values())
-    ax.bar(bins, values, width=45, align='center', edgecolor='black')
-    ax.axvline(x=peak, color='red', linestyle='--')
-    ax.annotate(f"Initial rate: {peak}",
-            xy=(peak, max(values) * 0.9),
-            xytext=(peak + 100, max(values) * 0.9),
+    ax.bar(bins, values, width=18, align="center", edgecolor="black")
+    ax.axvline(x=value, color="red", linestyle="--")
+    ax.annotate(f"Initial rate ({method}): {value}",
+            xy=(value, max(values) * 0.9),
+            xytext=(value + 100, max(values) * 0.9),
             arrowprops=dict(facecolor='red', shrink=0.05),
             fontsize=10)
     ax.set_xlabel("Rating")
     ax.set_ylabel("Players")
     ax.set_title(f"'{ladder}' Rating Histogram")
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
+    plt.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
     return buf.read()
 
 def find_initial_rate(players, ladder, visualize=False):
-    """
-    あるladderのヒストグラムの頂点を初期レートとして取り出す。
-    """
     image_bytes = None
     histogram = make_rate_histogram(players, ladder)
-    peak = pick_peak(histogram)
+    value, method = pick_peak_or_median(histogram, players, ladder)
     if visualize:
-        image_bytes = draw_histogram_png(histogram, peak, ladder)
-    initial_rate = peak
+        image_bytes = draw_histogram_png(histogram, value, ladder, method)
+    initial_rate = value
     return initial_rate, image_bytes
 
 async def customized_elo_rating(room):
