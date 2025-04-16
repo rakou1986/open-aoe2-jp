@@ -56,11 +56,11 @@ TOKEN = None
 
 
 if _debug:
-    token_file = "canary_token.txt"
+    token_file_name = "canary_token.txt"
     from bot_settings import canary_bot_target_channel_id as target_channel_id
     from bot_settings import canary_bot_server_id as guild_id
 else:
-    token_file = "token.txt"
+    token_file_name = "token.txt"
     from bot_settings import available_bot_target_channel_id as target_channel_id
     from bot_settings import available_bot_server_id as guild_id
 import usage
@@ -73,10 +73,10 @@ except ImportError:
     secret_commands = []
     process_secret_commands = None
 
-if os.path.exists(token_file):
-    with open(token_file) as f:
+if os.path.exists(token_file_name):
+    with open(token_file_name) as f:
         TOKEN = f.read().strip()
-        print(f"{token_file}を読み取りました。")
+        print(f"{token_file_name}を読み取りました。")
 
 if TOKEN is None:
     print(usage.no_token)
@@ -105,16 +105,16 @@ bot_commands = [
     "--help", "--help-en",
     ] + secret_commands
 room_number_pool = list(range(1, 100))
-room_number_pool_file = ".bot4wz.room_number_pool.pickle"
+room_number_pool_file_name = ".bot4wz.room_number_pool.pickle"
 rooms = []
-rooms_file = ".bot4wz.rooms.pickle"
+rooms_file_name = ".bot4wz.rooms.pickle"
 temp_message_ids = []
-temp_message_ids_file = ".bot4wz.temp_message_ids.pickle"
+temp_message_ids_file_name = ".bot4wz.temp_message_ids.pickle"
 last_process_message_timestamp = now()
 players = []
-players_file = ".bot4wz.players.pickle"
+players_file_name = ".bot4wz.players.pickle"
 games = []
-games_file = ".bot4wz.games.pickle"
+games_file_name = ".bot4wz.games.pickle"
 ladder_dict = {
     "arabia": "アラビア系",
     "LN": "遊牧系",
@@ -368,62 +368,62 @@ def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2
 
 
 async def save_rating_system(backup=False):
-    with open(players_file, "wb") as f:
+    with open(players_file_name, "wb") as f:
         pickle.dump(players, f)
-    with open(games_file, "wb") as f:
+    with open(games_file_name, "wb") as f:
         pickle.dump(games, f)
     if backup:
-        players_backup = os.path.join("./backup", now().strftime("%Y-%m-%d") + players_file)
+        players_backup = os.path.join("./backup", now().strftime("%Y-%m-%d") + players_file_name)
         if not os.path.exists(players_backup):
             with open(players_backup, "wb") as f:
                 pickle.dump(players, f)
-        games_backup = os.path.join("./backup", now().strftime("%Y-%m-%d") + games_file)
+        games_backup = os.path.join("./backup", now().strftime("%Y-%m-%d") + games_file_name)
         if not os.path.exists(games_backup):
             with open(games_backup, "wb") as f:
                 pickle.dump(games, f)
 
 async def save_bot_state():
     rooms_picklable = [RoomPicklable(room) for room in rooms]
-    with open(rooms_file, "wb") as f:
+    with open(rooms_file_name, "wb") as f:
         pickle.dump(rooms_picklable, f)
-    with open(room_number_pool_file, "wb") as f:
+    with open(room_number_pool_file_name, "wb") as f:
         pickle.dump(room_number_pool, f)
-    with open(temp_message_ids_file, "wb") as f:
+    with open(temp_message_ids_file_name, "wb") as f:
         pickle.dump(temp_message_ids, f)
 
 async def load(bot):
     global rooms
-    if os.path.exists(rooms_file):
-        with open(rooms_file, "rb") as f:
+    if os.path.exists(rooms_file_name):
+        with open(rooms_file_name, "rb") as f:
             try:
                 rooms_picklable = pickle.load(f)
                 rooms = await asyncio.gather(*(picklable.to_room(bot) for picklable in rooms_picklable))
             except Exception as e:
                 pass
     global room_number_pool
-    if os.path.exists(room_number_pool_file):
-        with open(room_number_pool_file, "rb") as f:
+    if os.path.exists(room_number_pool_file_name):
+        with open(room_number_pool_file_name, "rb") as f:
             try:
                 room_number_pool = pickle.load(f)
             except Exception as e:
                 pass
     global temp_message_ids
-    if os.path.exists(temp_message_ids_file):
-        with open(temp_message_ids_file, "rb") as f:
+    if os.path.exists(temp_message_ids_file_name):
+        with open(temp_message_ids_file_name, "rb") as f:
             try:
                 temp_message_ids = pickle.load(f)
             except Exception as e:
                 pass
     global players
-    if os.path.exists(players_file):
-        with open(players_file, "rb") as f:
+    if os.path.exists(players_file_name):
+        with open(players_file_name, "rb") as f:
             try:
                 players = pickle.load(f)
             except Exception as e:
                 pass
     global games
-    if os.path.exists(games_file):
-        with open(games_file, "rb") as f:
+    if os.path.exists(games_file_name):
+        with open(games_file_name, "rb") as f:
             try:
                 games = pickle.load(f)
             except Exception as e:
