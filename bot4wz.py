@@ -273,6 +273,8 @@ async def customized_elo_rating(room):
 
     Ra = sum(player.latest_rate(ladder) for player in room.team1)
     Rb = sum(player.latest_rate(ladder) for player in room.team2)
+    team1_winrate_avg = sum(player.latest_winrate(30) for player in room.team1) / len(room.team1)
+    team2_winrate_avg = sum(player.latest_winrate(30) for player in room.team2) / len(room.team2)
 
     deltas = {}
     for player in players:
@@ -285,7 +287,7 @@ async def customized_elo_rating(room):
         # イロレーティングはチェス(1v1)なので、チームレート差のスケールを合わせたほうがよい。例えば4v4なら1/4、3v3なら1/3。
         Ea = 1.0 / (1 + 10 ** ( ((opponent_rate - team_rate) / len(players) / 2) / 400.0))
         Sa = 1 if win else 0
-        K = customized_k_factor(player, room, win, Ra, Rb)
+        K = customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg)
         delta = K * (Sa - Ea)
         delta = int(Decimal(delta).quantize(Decimal("0"), ROUND_HALF_UP))
         delta = max(1, delta)
@@ -307,7 +309,7 @@ async def customized_elo_rating(room):
     return result
 
 
-def customized_k_factor(player, room, win):
+def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg):
     base_K = 26 # たまひよが約26
     ladder = room.ladder
 
@@ -318,6 +320,7 @@ def customized_k_factor(player, room, win):
     boost_ratio = 1.0 + 14 * player.rating_booster / 30
     winrate_ratio = 1.0
     streak_ratio = 1.0
+    strength_ratio = 1.0
     streak = player.streak(ladder)
 
     if 0 < player.rating_booster:
@@ -343,7 +346,25 @@ def customized_k_factor(player, room, win):
         if 1 < abs(streak):
             streak_ratio = 1.0 + 0.08 * abs(streak)
 
-    return base_K * boost_ratio * winrate_ratio * streak_ratio
+    # チーム平均勝率による補正
+    if not team1_winrate_avg == team2_winrate_avg:
+        winrate_delta = abs(team1_winrate_avg - team2_winrate_avg)
+        if player_team == 1:
+            lesser = team1_winrate_avg < team2_winrate_avg
+        else:
+            lesser = team2_winrate_avg < team1_winrate_avg
+        lose = False if win else True
+        greater = False if lesser else True
+        if win and lesser: # 劣勢なのに勝った（レア）
+            strength_ratio = 1 + 0.08 * winrate_delta * 100
+        if win and greater: # 優勢で勝った（コモン）
+            strength_ratio = 1 - 0.08 * winrate_delta * 100
+        if lose and lesser: # 劣勢で負けた（コモン）
+            strength_ratio = 1 - 0.08 * winrate_delta * 100
+        if lose and greater: # 優勢なのに負けた（レア）
+            strength_ratio = 1 + 0.08* winrate_delta * 100
+
+    return base_K * boost_ratio * winrate_ratio * streak_ratio * strength_ratio
 
 
 async def save_rating_system(backup=False):
