@@ -25,7 +25,11 @@ pkg install python git wget openssl socat vim which openssl-tool cronie dnsutils
 crond
 .bashrcにsshd, crondを入れる
 pip install --upgrade pip setuptools wheel
-pip install ipython requests discord rapidfuzz psutil matplotlib numpy
+pip install ipython requests discord rapidfuzz psutil matplotlib
+pkg install curl gnupg -y
+curl -L https://its-pointless.github.io/setup-pointless-repo.sh | bash
+pkg install python-numpy
+
 which nano
 パスをメモ
 which vim
