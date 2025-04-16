@@ -615,8 +615,16 @@ async def process_message(message):
                                 temp_message = True
                 if room is not None:
                     if len(room.members) == room.capacity:
-                        reply = f"[IN] `{get_name(message.author)}`\n" + f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + " ".join(f"{member.mention}" for member in room.members)
-                        delete_room(room)
+                        process_umari(room)
+                        reply = "".join([f"[IN] `{get_name(message.author)}`\n",
+                            f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n",
+                            " ".join(f"{member.mention}" for member in room.members) + "\n",
+                            f"チーム1:【{sum(player.latest_rate(room.ladder) for player in room.team1)}】\n",
+                            " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team1) + "\n",
+                            f"チーム2:【{sum(player.latest_rate(room.ladder) for player in room.team2)}】\n",
+                            " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team2) + "\n",
+                        # delete_room(room) # --won, --lost コマンド実行時にgames.append(Game(...))をしてから消す。
+                        # --won, --lost 実行までは対戦中の部屋として表示されて、爆破でキャンセル
                         room_to_clean = room
 
         for command in ["--nuke", "--out", "--leave", "--dismiss"]:
