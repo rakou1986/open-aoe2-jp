@@ -487,12 +487,13 @@ def to_int(string):
     except ValueError:
         return None
 
-def get_name(user):
-    # サーバーニックネーム、表示名、ユーザー名（グローバル）の順に名前を探す
-    for name in [user.nick, user.display_name, user.name]:
-        if name is not None:
-            return name
-    return "名前を取得できませんでした"
+def get_name(member):
+    """サーバーニックネーム、表示名、ユーザー名（グローバル）の順に名前を探す"""
+    if hasattr(member, "nick") and member.nick:
+        return member.nick
+    if hasattr(member, "global_name") and member.global_name:
+        return member.global_name  # 実はglobal_nameがGUI上の「表示名」らしい。display_nameではない
+    return member.name # これがglobal_nameのような気がするが…
 
 def delete_room(room):
     rooms.pop(rooms.index(room))
