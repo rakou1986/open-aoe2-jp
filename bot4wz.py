@@ -577,10 +577,14 @@ async def process_message(message):
                     if len(rooms) == 1:
                         room = rooms[0]
                         if not message.author in room.members:
-                            room.members.append(message.author)
-                            room.last_notice_timestamp = now()
-                            reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[IN] `{get_name(message.author)}`"
-                            room_to_clean = room
+                            if room.fighting:
+                                reply = "対戦中の部屋には入れません"
+                                temp_message = True
+                            else:
+                                room.members.append(message.author)
+                                room.last_notice_timestamp = now()
+                                reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[IN] `{get_name(message.author)}`"
+                                room_to_clean = room
                         else:
                             reply = "もう入ってるよ"
                             temp_message = True
@@ -606,15 +610,19 @@ async def process_message(message):
                             temp_message = True
                         else:
                             if not message.author in room.members:
-                                room.members.append(message.author)
-                                room.last_notice_timestamp = now()
-                                reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[IN] `{get_name(message.author)}`"
-                                room_to_clean = room
+                                if room.fighting:
+                                    reply - "対戦中の部屋には入れません"
+                                    temp_message = True
+                                else:
+                                    room.members.append(message.author)
+                                    room.last_notice_timestamp = now()
+                                    reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[IN] `{get_name(message.author)}`"
+                                    room_to_clean = room
                             else:
                                 reply = "もう入ってるよ"
                                 temp_message = True
                 if room is not None:
-                    if len(room.members) == room.capacity:
+                    if len(room.members) == room.capacity and not room.fighting:
                         process_umari(room)
                         reply = "".join([f"[IN] `{get_name(message.author)}`\n",
                             f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n",
