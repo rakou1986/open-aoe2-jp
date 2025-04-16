@@ -101,6 +101,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 bot_commands = [
     "--yyk", "--call", "--create", "--reserve", "--heybros",
+    "--ln",
+    "--michi",
     "--bakuha", "--del", "--cancel", "--destroy", "--hakai", "--explosion",
     "--no", "--in", "--join",
     "--nuke", "--out", "--leave", "--dismiss",
@@ -120,10 +122,9 @@ players_file_name = ".bot4wz.players.pickle"
 games = []
 games_file_name = ".bot4wz.games.pickle"
 ladder_dict = {
-    "arabia": "アラビア系",
+    "Arabia": "アラビア系",
     "LN": "遊牧系",
-    "michi": "みち",
-    "bakuran": "爆ラン",
+    "Michi": "みち",
 }
 
 
@@ -504,7 +505,7 @@ async def process_message(message):
         room_to_clean = None
         temp_message = False
 
-        for command in ["--yyk", "--call", "--create", "--reserve", "--heybros"]:
+        for command in ["--yyk", "--call", "--create", "--reserve", "--heybros", "--ln", "--michi"]:
             if message.content.startswith(command):
                 capacity = 8
                 name = message.content.split(command)[1]
@@ -513,10 +514,16 @@ async def process_message(message):
                         capacity = to_int(name[0]) + 1
                         name = name.replace(name[0], "")
                 name = "無制限" if not name else name.strip()
+                if command == "--ln":
+                    ladder = "LN"
+                elif command == "--michi":
+                    ladder = "Michi"
+                else:
+                    ladder = "Arabia"
                 try:
-                    room = Room(author=message.author, name=name, capacity=capacity)
+                    room = Room(author=message.author, name=name, capacity=capacity, ladder=ladder)
                     rooms.append(room)
-                    reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
+                    reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)} レーティング：{ladder_dict[ladder]}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
                     room_to_clean = room
                     rooms.sort(key=lambda room: room.number)
                 except RoomNumberExhaust:
