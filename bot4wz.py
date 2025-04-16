@@ -210,7 +210,7 @@ class Player(object):
                 }]
             })
 
-    def win_ratio_last(go_back, ladder):
+    def latest_winrate(go_back, ladder):
         rates = [record["rate"] for record in self.rate_history[ladder][-go_back -1:]]
         win = 0
         lose = 0
@@ -331,14 +331,14 @@ def customized_k_factor(player, room, win):
             boost_ratio *= 0.90 ** (abs(streak) * weight)
         # 連敗ではなかろうが勝率でも負けすぎは補正を減らす
         if 4 < matches:
-            win_ratio = player.win_ratio_last(30, ladder)
-            if win_ratio < 0.5:
-                boost_ratio *= 0.988 ** ((0.5 - win_ratio) * 100 * weight)
+            winrate = player.latest_winrate(30, ladder)
+            if winrate < 0.5:
+                boost_ratio *= 0.988 ** ((0.5 - winrate) * 100 * weight)
         player.rating_booster -= 1
     else:
         # いつもやってる人（ブーストなし）は最近30戦で1％勝ち越す/負け越すごとに5％補正
-        win_ratio = player.win_ratio_last(30, ladder)
-        winrate_ratio = 1 + 0.05 * abs(0.5 - win_ratio) * 100
+        winrate = player.latest_winrate(30, ladder)
+        winrate_ratio = 1 + 0.05 * abs(0.5 - winrate) * 100
         # 連勝・連敗補正
         if 1 < abs(streak):
             streak_ratio = 1.0 + 0.08 * abs(streak)
