@@ -35,10 +35,14 @@ Ctrl + C
 """
 
 import asyncio
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
+import io
+import matplotlib.pyplot as plt
+import numpy as np
 import pickle
 import psutil
 import random
@@ -263,6 +267,53 @@ class Game(object):
         self.timestamp = now()
         self.win_team = win_team
 
+
+def make_rate_histogram(players, ladder, bin_width=20):
+    histogram = defaultdict(int)
+    for player in players:
+        latest_rate = player.latest_rate(ladder)
+        bucket = bin_width * (latest_rate // bin_width)
+        histogram[bucket] += 1
+    return dict(sorted(histogram.items()))
+
+def pick_peak(histogram):
+    keys = list(histogram.keys())
+    values = list(histogram.values())
+    smooth = np.convolve(values, [1, 1, 1], mode="same")
+    max_idx = int(np.argmax(smooth))
+    return keys[max_idx]
+
+def draw_histogram_png(histogram, peak, ladder):
+    fig, ax = plt.subplots()
+    bins = list(histogram.keys())
+    values = list(histogram.values())
+    ax.bar(bins, values, width=45, align='center', edgecolor='black')
+    ax.axvline(x=peak, color='red', linestyle='--')
+    ax.annotate(f"Initial rate: {peak}",
+            xy=(peak, max(values) * 0.9),
+            xytext=(peak + 100, max(values) * 0.9),
+            arrowprops=dict(facecolor='red', shrink=0.05),
+            fontsize=10)
+    ax.set_xlabel("Rating")
+    ax.set_ylabel("Players")
+    ax.set_title(f"'{ladder}' Rating Histogram")
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+
+def find_initial_rate(players, ladder, visualize=False):
+    """
+    あるladderのヒストグラムの頂点を初期レートとして取り出す。
+    """
+    image_bytes = None
+    histogram = make_rate_histogram(players, ladder)
+    peak = pick_peak(histogram)
+    if visualize:
+        image_bytes = draw_histogram_png(histogram, peak, ladder)
+    initial_rate = peak
+    return initial_rate, image_bytes
 
 async def customized_elo_rating(room):
     """
