@@ -201,7 +201,7 @@ class Room(object):
 
 class Player(object):
 
-    def __init__(self, user, ladder_rate={key: 8000 for key in ladder_dict.keys()}, rating_booster=30):
+    def __init__(self, user, ladder_to_rate={ladder: find_initial_rate(players, ladder)[0] for ladder in ladder_dict.keys()}, rating_booster=30):
         self.id = user.id
         self.name = user.name
         self.rate_history = {}
@@ -209,7 +209,7 @@ class Player(object):
         for ladder in ladder_dict.keys():
             self.rate_history.update({
                 ladder: [{
-                    "rate": ladder_rate[ladder],
+                    "rate": ladder_to_rate[ladder],
                     "timestamp": now(),
                 }]
             })
@@ -479,7 +479,6 @@ async def load(bot):
                 games = pickle.load(f)
             except Exception as e:
                 pass
-
 
 def to_int(string):
     try:
