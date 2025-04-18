@@ -35,21 +35,16 @@ Ctrl + C
 """
 
 import asyncio
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
 import io
-import matplotlib.pyplot as plt
-import numpy as np
 import pickle
 import psutil
 import random
 import re
-from scipy.signal import find_peaks
 import socket
-import statistics
 import sys
 import time
 import urllib
@@ -58,8 +53,9 @@ import discord
 from discord.ext import commands
 import rapidfuzz
 
-TOKEN = None
+from rating_statistics import find_initial_rate
 
+TOKEN = None
 
 if _debug:
     token_file_name = "canary_token.txt"
@@ -74,20 +70,9 @@ import usage
 try:
     from secret import secret_commands
     from secret import process_secret_commands
-    print("隠しコマンドが有効です。")
 except ImportError:
     secret_commands = []
     process_secret_commands = None
-
-if os.path.exists(token_file_name):
-    with open(token_file_name) as f:
-        TOKEN = f.read().strip()
-        print(f"{token_file_name}を読み取りました。")
-
-if TOKEN is None:
-    print(usage.no_token)
-    input("Enterを押して終了: ")
-    sys.exit(0)
 
 def now():
     return datetime.now()
@@ -204,7 +189,7 @@ class Room(object):
 
 class Player(object):
 
-    def __init__(self, user, ladder_to_rate={ladder: find_initial_rate(players, ladder)[0] for ladder in ladder_dict.keys()}, rating_booster=30):
+    def __init__(self, user, ladder_initial_rate={ladder: find_initial_rate(players, ladder)[0] for ladder in ladder_dict.keys()}, rating_booster=30):
         self.id = user.id
         self.name = user.name
         self.rate_history = {}
@@ -212,12 +197,12 @@ class Player(object):
         for ladder in ladder_dict.keys():
             self.rate_history.update({
                 ladder: [{
-                    "rate": ladder_to_rate[ladder],
+                    "rate": ladder_initial_rate[ladder],
                     "timestamp": now(),
                 }]
             })
 
-    def latest_winrate(go_back, ladder):
+    def latest_winrate(self, go_back, ladder):
         rates = [record["rate"] for record in self.rate_history[ladder][-go_back -1:]]
         win = 0
         lose = 0
@@ -232,7 +217,7 @@ class Player(object):
             prev = next_
         return win / (win + lose)
 
-    def streak(ladder):
+    def streak(self, ladder):
         idx = -1
         streak = 0
         rates = [record["rate"] for record in self.rate_history[ladder]]
@@ -253,10 +238,10 @@ class Player(object):
             next_ = prev
         return streak
 
-    def latest_rate(ladder):
+    def latest_rate(self, ladder):
         return self.rate_history[ladder][-1]["rate"]
 
-    def latest_timestamp(ladder):
+    def latest_timestamp(self, ladder):
         return self.rate_history[ladder][-1]["timestamp"]
 
 
@@ -276,55 +261,6 @@ def split(players):
 
 def process_umari(room):
     pass
-
-def make_rate_histogram(players, ladder, bin_width=20):
-    histogram = defaultdict(int)
-    for player in players:
-        latest_rate = player.latest_rate(ladder)
-        bucket = bin_width * (latest_rate // bin_width)
-        histogram[bucket] += 1
-    return dict(sorted(histogram.items()))
-
-def pick_peak_or_median(histogram, players, ladder):
-    keys = list(histogram.keys())
-    values = list(histogram.values())
-    smooth = np.convolve(values, [1, 1, 1], mode="same")
-    peaks, properties = find_peaks(smooth)
-    if len(peaks) == 1:
-        max_idx = int(np.argmax(smooth))
-        return keys[max_idx], "peak"
-    else:
-        all_rates = [player.latest_rate(ladder) for player in players]
-        return int(statistics.median(all_rates)), "median"
-
-def draw_histogram_png(histogram, value, ladder, method):
-    fig, ax = plt.subplots()
-    bins = list(histogram.keys())
-    values = list(histogram.values())
-    ax.bar(bins, values, width=18, align="center", edgecolor="black")
-    ax.axvline(x=value, color="red", linestyle="--")
-    ax.annotate(f"Initial rate ({method}): {value}",
-            xy=(value, max(values) * 0.9),
-            xytext=(value + 100, max(values) * 0.9),
-            arrowprops=dict(facecolor='red', shrink=0.05),
-            fontsize=10)
-    ax.set_xlabel("Rating")
-    ax.set_ylabel("Players")
-    ax.set_title(f"'{ladder}' Rating Histogram")
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png")
-    plt.close(fig)
-    buf.seek(0)
-    return buf.read()
-
-def find_initial_rate(players, ladder, visualize=False):
-    image_bytes = None
-    histogram = make_rate_histogram(players, ladder)
-    value, method = pick_peak_or_median(histogram, players, ladder)
-    if visualize:
-        image_bytes = draw_histogram_png(histogram, value, ladder, method)
-    initial_rate = value
-    return initial_rate, image_bytes
 
 async def customized_elo_rating(room):
     """
@@ -809,6 +745,10 @@ async def temp_message_cleaner():
                         pass
             temp_message_ids.clear()
 
+async def save_initial_rate_png():
+    for ladder in ladder_dict.keys():
+        find_initial_rate(players, ladder, visualize=True, save=True)
+
 async def daily_backup():
     while True:
         if on_ready_complete.is_set():
@@ -816,6 +756,7 @@ async def daily_backup():
         await asyncio.sleep(1)
     while True:
         await save_rating_system(backup=True)
+        await save_initial_rate_png()
         tommorow_6 = (now() + timedelta(days=1)).replace(hour=6, minute=0, second=0, microsecond=0)
         await asyncio.sleep( (tommorow_6 - now()).total_seconds() )
 
@@ -896,7 +837,18 @@ def main():
         sys.exit(0)
 
 if __name__ == "__main__":
+    if os.path.exists(token_file_name):
+        with open(token_file_name) as f:
+            TOKEN = f.read().strip()
+            print(f"{token_file_name}を読み取りました。")
+
+    if TOKEN is None:
+        print(usage.no_token)
+        input("Enterを押して終了: ")
+        sys.exit(0)
+
     if already_running():
         print("すでに実行中のbot4wz.pyがあるのでbotを開始せずに終了します")
         sys.exit(0)
+
     main()
