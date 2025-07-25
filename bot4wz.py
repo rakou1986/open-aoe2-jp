@@ -4,6 +4,7 @@
 _debug = True
 
 """
+test string
 [requirements]
 python -V
 Python 3.12.10
