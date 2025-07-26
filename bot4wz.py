@@ -293,7 +293,7 @@ def process_umari(room):
     min_diff = None
     best_split = None
     all_idxces = set(range(len(players_)))
-    for idxces in itertools.combinations(range(8), 4):
+    for idxces in itertools.combinations(range(len(players_)), int(len(players_) / 2)):
         team1 = [players_[i] for i in idxces]
         team2 = [players_[i] for i in all_idxces - set(idxces)]
         total1 = sum(player.latest_rate(room.ladder) for player in team1)
