@@ -139,11 +139,14 @@ def find_initial_rate(players, ladder, visualize=False, save=False):
     methodは山を返したならpeak, 中央値を返したならmedian。
     visualizeしたなら画像も返す。
     """
+    initial_rate = 8000
+    method = None
     image_bytes = None
-    histogram = make_rate_histogram(players, ladder)
-    initial_rate, method = pick_peak_or_median(histogram, players, ladder)
-    if visualize:
-        image_bytes = draw_histogram(histogram, initial_rate, ladder, name=method, label="Initial rate", save=save)
+    if players:
+        histogram = make_rate_histogram(players, ladder)
+        initial_rate, method = pick_peak_or_median(histogram, players, ladder)
+        if visualize:
+            image_bytes = draw_histogram(histogram, initial_rate, ladder, name=method, label="Initial rate", save=save)
     return initial_rate, method, image_bytes
 
 def visualize_player_rate(players, ladder, player_id):
