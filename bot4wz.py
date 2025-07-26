@@ -4,7 +4,6 @@
 _debug = True
 
 """
-test string
 [requirements]
 python -V
 Python 3.12.10
@@ -41,6 +40,7 @@ from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
 import io
+import itertools
 import pickle
 import psutil
 import random
@@ -93,6 +93,9 @@ bot_commands = [
     "--michi",
     "--bakuha", "--del", "--cancel", "--destroy", "--hakai", "--explosion",
     "--no", "--in", "--join",
+    "--kick",
+    "--win", "--lose",
+    "--register", "--setrate",
     "--nuke", "--out", "--leave", "--dismiss",
     "--rooms",
     "--force-bakuha-tekumakumayakonn-tekumakumayakonn",
@@ -110,7 +113,7 @@ players_file_name = ".bot4wz.players.pickle"
 games = []
 games_file_name = ".bot4wz.games.pickle"
 ladder_dict = {
-    "Arabia": "アラビア系",
+    "Arabia": "アラビア系/ルーンストーン",
     "LN": "遊牧系",
     "Michi": "みち",
 }
@@ -192,7 +195,7 @@ class Player(object):
 
     def __init__(self, user, ladder_initial_rate={ladder: find_initial_rate(players, ladder)[0] for ladder in ladder_dict.keys()}, rating_booster=30):
         self.id = user.id
-        self.name = user.name
+        self.name = get_name(user)
         self.rate_history = {}
         self.rating_booster = rating_booster # 最大値30。新規は30、久しぶりは15加算。何回久しぶりになっても30まで。
         for ladder in ladder_dict.keys():
@@ -209,7 +212,7 @@ class Player(object):
         lose = 0
         prev = rates.pop(0)
         if not rates:
-            return 0
+            return 0.5 # 0勝0敗が他で扱いにくいので便宜上
         for next_ in rate:
             if prev < next_:
                 win += 1
@@ -251,8 +254,8 @@ class Game(object):
         self.id = id
         self.host_id = host_id
         self.ladder = ladder
-        self.team1_deltas = team1
-        self.team2_deltas = team2
+        self.team1_deltas = team1_deltas
+        self.team2_deltas = team2_deltas
         self.timestamp = now()
         self.win_team = win_team
 
@@ -260,8 +263,48 @@ def split(players):
     half = len(players) // 2
     delta_min = float("infinity")
 
+def set_rate(user, ladder, rate):
+    for player in players:
+        if player.id == user.id:
+            break
+    else:
+        return False
+    player.rate_history[ladder][-1]["rate"] = rate
+    return True
+
+def player_registration(user, manually=False):
+    if manually:
+        player = Player(user=user, rating_booster=0)
+    else:
+        player = Player(user=user)
+    players.append(player)
+    return player
+
 def process_umari(room):
-    pass
+    players_ = []
+    for member in room.members:
+        for player in players:
+            if player.id == member.id:
+                players_.append(player)
+                break
+        else:
+            player = player_registration(member)
+            players_.append(player)
+    min_diff = None
+    best_split = None
+    all_idxces = set(range(len(players_)))
+    for idxces in itertools.combinations(range(8), 4):
+        team1 = [players_[i] for i in idxces]
+        team2 = [players_[i] for i in all_idxces - set(idxces)]
+        total1 = sum(player.latest_rate(room.ladder) for player in team1)
+        total2 = sum(player.latest_rate(room.ladder) for player in team2)
+        diff = abs(total1 - total2)
+        if diff < min_diff:
+            min_diff = diff
+            best_split = (team1, team2)
+    room.team1 = best_split[0]
+    room.team2 = best_split[1]
+    room.fighting = True
 
 async def customized_elo_rating(room):
     """
@@ -299,13 +342,12 @@ async def customized_elo_rating(room):
 
     team1_deltas = [(player.name, deltas[player.name]) for player in room.team1]
     team2_deltas = [(player.name, deltas[player.name]) for player in room.team2]
-    games.append(
-        Game(id=len(games)+1, host_id=room.owner.id, ladder=ladder,
-        team1_deltas=team1_deltas, team2_deltas=team2_deltas, win_team=room.win_team)
-    )
+    game = Game(id=len(games)+1, host_id=room.owner.id, ladder=ladder,
+                team1_deltas=team1_deltas, team2_deltas=team2_deltas, win_team=room.win_team)
+    games.append(game)
 
     await save_rating_system()
-    return result
+    return game
 
 
 def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg):
@@ -313,7 +355,7 @@ def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2
     ladder = room.ladder
 
     # 復帰者に補正をつける
-    if timedelta(days=90) < now() - player.latest_timestamp:
+    if timedelta(days=90) < now() - player.latest_timestamp(ladder):
         player.rating_booster = min(30, player.rating_booster + 15)
     # player.rating_boosterの初期値30、最大30。
     boost_ratio = 1.0 + 14 * player.rating_booster / 30
@@ -492,7 +534,7 @@ async def process_message(message):
                         reply = f"爆破: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + " ".join(f"{member.mention}" for member in room.members)
                         room_to_clean = room
                     elif len(owned_rooms) == 0:
-                        reply = "現在、部屋はありません"
+                        reply = "干している部屋はありません"
                         temp_message = True
                     else:
                         reply = "複数の部屋を建てたときは部屋番号を指定してね"
@@ -580,9 +622,145 @@ async def process_message(message):
                             f"チーム2:【{sum(player.latest_rate(room.ladder) for player in room.team2)}】\n",
                             " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team2) + "\n",
                             ])
-                        # delete_room(room) # --won, --lost コマンド実行時にgames.append(Game(...))をしてから消す。
-                        # --won, --lost 実行までは対戦中の部屋として表示されて、爆破でキャンセル
+                        # --win, --lose コマンド実行時にgames.append(Game(...))をしてからdelete_room(room)で消す
+                        # --win, --lose 実行までは対戦中の部屋として表示されて、爆破でキャンセル
                         room_to_clean = room
+
+        for command in ["--kick"]:
+            if message.content.startswith(command):
+                target_room = None
+                room_number = message.content.split(command)[1].strip().split()[0]
+                if not message.mentions:
+                    reply = "対象を指定してね"
+                    temp_message = True
+                else:
+                    target = message.mentions[0]
+                    if room_number == "":
+                        owned_rooms = []
+                        for room in rooms:
+                            if message.author.id == room.owner.id:
+                                owned_rooms.append(room)
+                        if len(owned_rooms) == 1:
+                            target_room = owned_rooms[0]
+                        elif len(owned_rooms) == 0:
+                            reply = "干している部屋はありません。ホスト用コマンドです"
+                            temp_message = True
+                        else:
+                            reply = "複数の部屋を建てたときは部屋番号を指定してね"
+                            temp_message = True
+                    else:
+                        room_number = to_int(room_number)
+                        if room_number is None:
+                            reply = "部屋番号をアラビア数字で指定してね"
+                            temp_message = True
+                        else:
+                            for room_ in rooms:
+                                if room_number == room_.number:
+                                    if message.author.id == room_.owner.id:
+                                        target_room = room_
+                                        break
+                            else:
+                                reply = "その番号の部屋がないか、ホストではないためkickできません"
+                                temp_message = True
+                    if target.id == message.author.id:
+                        reply = "自分自身はkickできません"
+                        temp_message = True
+                    else:
+                        if target_room:
+                            room = target_room
+                            for member in room.members:
+                                if member.id == target.id:
+                                    room.members.pop(room.members.index(member))
+                                    room.team1 = []
+                                    room.team2 = []
+                                    room.fighting = False
+                                    reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[OUT] `{get_name(target)}`"
+                                    room_to_clean = room
+                                    break
+                            else:
+                                reply = "対象が部屋にいません"
+                                temp_message = True
+
+        for command in ["--win", "--lose"]:
+            if message.content.startswith(command):
+                target_room = None
+                room_number = message.content.split(command)[1]
+                if room_number == "":
+                    owned_rooms = []
+                    for room in rooms:
+                        if message.author.id == room.owner.id:
+                            owned_rooms.append(room)
+                    if len(owned_rooms) == 1:
+                        target_room = owned_rooms[0]
+                    elif len(owned_rooms) == 0:
+                        reply = "干している部屋はありません。ホスト用コマンドです"
+                        temp_message = True
+                    else:
+                        reply = "複数の部屋を建てたときは部屋番号を指定してね"
+                        temp_message = True
+                else:
+                    room_number = to_int(room_number)
+                    if room_number is None:
+                        reply = "部屋番号をアラビア数字で指定してね"
+                        temp_message = True
+                    else:
+                        for room_ in rooms:
+                            if room_number == room_.number:
+                                if message.author.id == room_.owner.id:
+                                    target_room = room_
+                                    break
+                        else:
+                            reply = "その番号の部屋がないか、ホストではないため勝敗報告できません"
+                            temp_message = True
+                if target_room and target_room.fighting:
+                    # process_umariでowner_playerの存在が保障される
+                    for player in players:
+                        if player.id == room.owner.id:
+                            owner_player = player
+                            break
+                    if owner_player in room.team1:
+                        owner_team = False
+                    else:
+                        owner_team = True
+                    if command == "--win":
+                        room.win_team = int(owner_team) + 1
+                    if command == "--lose":
+                        room.win_team = int(not owner_team) + 1
+                    game = await customized_elo_rating(room)
+                    delete_room(target_room)
+                    reply = "\n".join([
+                        "お疲れさまでした",
+                        f"勝利チーム：{game.win_team}",
+                        f"ラダー：{ladder_dict[game.ladder]}",
+                        "チーム1：" + ", ".join([f"{name}({delta})" for (name, delta) in game.team1_deltas]),
+                        "チーム2：" + ", ".join([f"{name}({delta})" for (name, delta) in game.team2_deltas]),
+                        ])
+
+        if message.content.startswith("--register"):
+            if message.author.id == 311505132980273153: # rakou
+                if not message.mentions:
+                    reply = "error"
+                    temp_message = True
+                else:
+                    user = message.mentions[0]
+                    player = player_registration(user)
+                    reply = f"登録：{player.name} 初期レート {json.dumps(player.rate_history)}"
+
+        if message.content.startswith("--setrate"):
+            if message.author.id == 311505132980273153: # rakou
+                parts = message.content.split()
+                if len(parts) != 4 or not message.mentions:
+                    reply = "error"
+                    temp_message = True
+                else:
+                    user = message.mentions[0]
+                    command, mention, ladder, rate = parts
+                    rate = to_int(rate)
+                    if ladder in ladder_dict.keys() and rate is not None:
+                        set_rate(user, ladder, rate)
+                    else:
+                        reply = "error"
+                        temp_message = True
 
         for command in ["--nuke", "--out", "--leave", "--dismiss"]:
             if message.content.startswith(command):
