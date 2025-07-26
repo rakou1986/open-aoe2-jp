@@ -39,20 +39,13 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
-import io
 import itertools
 import pickle
 import psutil
-import random
-import re
-import socket
 import sys
-import time
-import urllib
 
 import discord
 from discord.ext import commands
-import rapidfuzz
 
 from rating_statistics import find_initial_rate
 
