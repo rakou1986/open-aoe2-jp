@@ -594,7 +594,7 @@ async def process_message(message):
                         else:
                             if not message.author in room.members:
                                 if room.fighting:
-                                    reply - "対戦中の部屋には入れません"
+                                    reply = "対戦中の部屋には入れません"
                                     temp_message = True
                                 else:
                                     room.members.append(message.author)
