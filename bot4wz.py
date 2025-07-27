@@ -330,9 +330,10 @@ async def customized_elo_rating(room):
             "timestamp": now()
         })
         deltas[player.id] = delta
+        print(f"{player.name}: team={player_team}, win={win}, Ea={Ea:.4f}, Sa={Sa}, K={K}, delta={delta}")
 
-    team1_deltas = [(player.name, deltas[player.id]) for player in room.team1]
-    team2_deltas = [(player.name, deltas[player.id]) for player in room.team2]
+    team1_deltas = [(player.name, player.latest_rate(ladder), deltas[player.id]) for player in room.team1]
+    team2_deltas = [(player.name, player.latest_rate(ladder), deltas[player.id]) for player in room.team2]
     game = Game(id=len(games)+1, host_id=room.owner.id, ladder=ladder,
                 team1_deltas=team1_deltas, team2_deltas=team2_deltas, win_team=room.win_team)
     games.append(game)
@@ -388,15 +389,16 @@ def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2
         lose = False if win else True
         greater = False if lesser else True
         if win and lesser: # 劣勢なのに勝った（レア）
-            strength_ratio = 1 + 0.08 * winrate_delta * 100
+            strength_ratio = min(2, 1 + 0.08 * winrate_delta * 100)
         if win and greater: # 優勢で勝った（コモン）
-            strength_ratio = 1 - 0.08 * winrate_delta * 100
+            strength_ratio = max(0.5, 1 - 0.08 * winrate_delta * 100)
         if lose and lesser: # 劣勢で負けた（コモン）
-            strength_ratio = 1 - 0.08 * winrate_delta * 100
+            strength_ratio = max(0.5, 1 - 0.08 * winrate_delta * 100)
         if lose and greater: # 優勢なのに負けた（レア）
-            strength_ratio = 1 + 0.08* winrate_delta * 100
+            strength_ratio = min(2, 1 + 0.08* winrate_delta * 100)
 
-    return base_K * boost_ratio * winrate_ratio * streak_ratio * strength_ratio
+    print(f"base_K={base_K}, boost_ratio={boost_ratio:.3f}, winrate_ratio={winrate_ratio:.3f}, streak_ratio={streak_ratio:.3f}, strength_ratio={strength_ratio:.3f}")
+    return abs(base_K * boost_ratio * winrate_ratio * streak_ratio * strength_ratio)
 
 
 async def save_rating_system(backup=False):
@@ -725,8 +727,8 @@ async def process_message(message):
                         "お疲れさまでした",
                         f"勝利チーム：{game.win_team}",
                         f"ラダー：{ladder_dict[game.ladder]}",
-                        "チーム1：" + ", ".join([f"{name}({delta})" for (name, delta) in game.team1_deltas]),
-                        "チーム2：" + ", ".join([f"{name}({delta})" for (name, delta) in game.team2_deltas]),
+                        "チーム1：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team1_deltas]),
+                        "チーム2：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team2_deltas]),
                         ])
 
         if message.content.startswith("--register"):
