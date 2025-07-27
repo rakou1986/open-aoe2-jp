@@ -738,8 +738,8 @@ async def process_message(message):
                     temp_message = True
                 else:
                     user = message.mentions[0]
-                    player = player_registration(user)
-                    reply = f"登録：{player.name} 初期レート {json.dumps(player.rate_history)}"
+                    player = player_registration(user, manually=True)
+                    reply = f"登録：{player.name} 初期レート：Arabia({player.rate_history['Arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) Michi({player.rate_history['Michi'][-1]['rate']})"
 
         if message.content.startswith("-setrate"):
             if message.author.id == 311505132980273153: # rakou
