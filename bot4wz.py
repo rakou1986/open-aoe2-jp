@@ -210,7 +210,7 @@ class Player(object):
             if prev < next_:
                 win += 1
             else:
-                lost += 1
+                lose += 1
             prev = next_
         return win / (win + lose)
 
@@ -322,7 +322,8 @@ async def customized_elo_rating(room):
         K = customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg)
         delta = K * (Sa - Ea)
         delta = int(Decimal(delta).quantize(Decimal("0"), ROUND_HALF_UP))
-        delta = max(1, delta)
+        if delta == 0:
+            delta = 1 if win else -1
 
         player.rate_history[ladder].append({
             "rate": player.latest_rate(ladder) + delta,
@@ -338,7 +339,6 @@ async def customized_elo_rating(room):
 
     await save_rating_system()
     return game
-    rate
 
 
 def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg):
@@ -714,14 +714,11 @@ async def process_message(message):
                         if player.id == room.owner.id:
                             owner_player = player
                             break
-                    if owner_player in room.team1:
-                        owner_team = False
-                    else:
-                        owner_team = True
+                    owner_team = 1 if owner_player in room.team1 else 2
                     if command == "--win":
-                        room.win_team = int(owner_team) + 1
-                    if command == "--lose":
-                        room.win_team = int(not owner_team) + 1
+                        room.win_team = owner_team
+                    elif command == "--lose":
+                        room.win_team = 3 - owner_team # 3だと反転できる。team1: 3-1=2,  team2: 3-2=1
                     game = await customized_elo_rating(room)
                     delete_room(room)
                     reply = "\n".join([
