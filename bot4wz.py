@@ -283,7 +283,7 @@ def process_umari(room):
         else:
             player = player_registration(member)
             players_.append(player)
-    min_diff = None
+    min_diff = float("inf")
     best_split = None
     all_idxces = set(range(len(players_)))
     for idxces in itertools.combinations(range(len(players_)), int(len(players_) / 2)):
