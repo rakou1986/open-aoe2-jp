@@ -81,18 +81,18 @@ allowed_mentions = discord.AllowedMentions(users=True)
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 bot_commands = [
-    "--yyk", "--call", "--create", "--reserve", "--heybros",
-    "--ln",
-    "--michi",
-    "--bakuha", "--del", "--cancel", "--destroy", "--hakai", "--explosion",
-    "--no", "--in", "--join",
-    "--kick",
-    "--win", "--lose",
-    "--register", "--setrate",
-    "--nuke", "--out", "--leave", "--dismiss",
-    "--rooms",
-    "--force-bakuha-tekumakumayakonn-tekumakumayakonn",
-    "--help", "--help-en",
+    "--yyk", "-call", "-create", "-reserve", "-heybros",
+    "-ln",
+    "-michi",
+    "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
+    "-no", "-in", "-join",
+    "-kick",
+    "-win", "-lose",
+    "-register", "-setrate",
+    "-nuke", "-out", "-leave", "-dismiss",
+    "-rooms",
+    "-force-bakuha-tekumakumayakonn-tekumakumayakonn",
+    "-help", "-help-en",
     ] + secret_commands
 room_number_pool = list(range(1, 100))
 room_number_pool_file_name = ".bot4wz.room_number_pool.pickle"
@@ -492,7 +492,7 @@ async def process_message(message):
         room_to_clean = None
         temp_message = False
 
-        for command in ["--yyk", "--call", "--create", "--reserve", "--heybros", "--ln", "--michi"]:
+        for command in ["--yyk", "-call", "-create", "-reserve", "-heybros", "-ln", "-michi"]:
             if message.content.startswith(command):
                 capacity = 8
                 name = message.content.split(command)[1]
@@ -501,9 +501,9 @@ async def process_message(message):
                         capacity = to_int(name[0]) + 1
                         name = name.replace(name[0], "")
                 name = "無制限" if not name else name.strip()
-                if command == "--ln":
+                if command == "-ln":
                     ladder = "LN"
-                elif command == "--michi":
+                elif command == "-michi":
                     ladder = "Michi"
                 else:
                     ladder = "Arabia"
@@ -517,7 +517,7 @@ async def process_message(message):
                     reply = "部屋は同時に100個しか建てれません"
                     temp_message = True
 
-        for command in ["--bakuha", "--del", "--cancel", "--destroy", "--hakai", "--explosion"]:
+        for command in ["-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion"]:
             if message.content.startswith(command):
                 room_number = message.content.split(command)[1]
                 if room_number == "":
@@ -556,7 +556,7 @@ async def process_message(message):
                             reply = f"爆破: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + " ".join(f"{member.mention}" for member in room.members)
                             room_to_clean = room
 
-        for command in ["--no", "--in", "--join"]:
+        for command in ["-no", "-in", "-join"]:
             if message.content.startswith(command):
                 room_number = message.content.split(command)[1]
                 room = None
@@ -619,11 +619,11 @@ async def process_message(message):
                             f"チーム2:【{sum(player.latest_rate(room.ladder) for player in room.team2)}】\n",
                             " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team2) + "\n",
                             ])
-                        # --win, --lose コマンド実行時にgames.append(Game(...))をしてからdelete_room(room)で消す
-                        # --win, --lose 実行までは対戦中の部屋として表示されて、爆破でキャンセル
+                        # -win, -lose コマンド実行時にgames.append(Game(...))をしてからdelete_room(room)で消す
+                        # -win, -lose 実行までは対戦中の部屋として表示されて、爆破でキャンセル
                         room_to_clean = room
 
-        for command in ["--kick"]:
+        for command in ["-kick"]:
             if message.content.startswith(command):
                 target_room = None
                 room_number = message.content.split(command)[1].strip().split()[0]
@@ -678,7 +678,7 @@ async def process_message(message):
                                 reply = "対象が部屋にいません"
                                 temp_message = True
 
-        for command in ["--win", "--lose"]:
+        for command in ["-win", "-lose"]:
             if message.content.startswith(command):
                 target_room = None
                 room_number = message.content.split(command)[1]
@@ -717,9 +717,9 @@ async def process_message(message):
                             owner_player = player
                             break
                     owner_team = 1 if owner_player in room.team1 else 2
-                    if command == "--win":
+                    if command == "-win":
                         room.win_team = owner_team
-                    elif command == "--lose":
+                    elif command == "-lose":
                         room.win_team = 3 - owner_team # 3だと反転できる。team1: 3-1=2,  team2: 3-2=1
                     game = await customized_elo_rating(room)
                     delete_room(room)
@@ -731,7 +731,7 @@ async def process_message(message):
                         "チーム2：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team2_deltas]),
                         ])
 
-        if message.content.startswith("--register"):
+        if message.content.startswith("-register"):
             if message.author.id == 311505132980273153: # rakou
                 if not message.mentions:
                     reply = "error"
@@ -741,7 +741,7 @@ async def process_message(message):
                     player = player_registration(user)
                     reply = f"登録：{player.name} 初期レート {json.dumps(player.rate_history)}"
 
-        if message.content.startswith("--setrate"):
+        if message.content.startswith("-setrate"):
             if message.author.id == 311505132980273153: # rakou
                 parts = message.content.split()
                 if len(parts) != 4 or not message.mentions:
@@ -762,7 +762,7 @@ async def process_message(message):
                         reply = "error"
                         temp_message = True
 
-        for command in ["--nuke", "--out", "--leave", "--dismiss"]:
+        for command in ["-nuke", "-out", "-leave", "-dismiss"]:
             if message.content.startswith(command):
                 room_number = message.content.split(command)[1]
                 if room_number == "":
@@ -775,7 +775,7 @@ async def process_message(message):
                     if len(entered_rooms) == 1:
                         room = entered_rooms[0]
                         if room.owner == message.author:
-                            reply = "ホストが抜けるときは--bakuhaを使ってね"
+                            reply = "ホストが抜けるときは-bakuhaを使ってね"
                             temp_message = True
                         else:
                             room.members.pop(room.members.index(message.author))
@@ -807,7 +807,7 @@ async def process_message(message):
                             temp_message = True
                         else:
                             if room.owner == message.author:
-                                reply = "ホストが抜けるときは--bakuhaを使ってね"
+                                reply = "ホストが抜けるときは-bakuhaを使ってね"
                                 temp_message = True
                             else:
                                 room.members.pop(room.members.index(message.author))
@@ -815,7 +815,7 @@ async def process_message(message):
                                 reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[OUT] `{get_name(message.author)}`"
                                 room_to_clean = room
 
-        if message.content.startswith("--rooms"):
+        if message.content.startswith("-rooms"):
             lines = []
             for room in rooms:
                 lines.append(f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + "\n")
@@ -825,8 +825,8 @@ async def process_message(message):
                 reply = "現在、部屋はありません"
             temp_message = True
 
-        if message.content.startswith("--force-bakuha-tekumakumayakonn-tekumakumayakonn"):
-            room_number = to_int(message.content.split("--force-bakuha-tekumakumayakonn-tekumakumayakonn")[1])
+        if message.content.startswith("-force-bakuha-tekumakumayakonn-tekumakumayakonn"):
+            room_number = to_int(message.content.split("-force-bakuha-tekumakumayakonn-tekumakumayakonn")[1])
             if room_number is None:
                 reply = "部屋番号をアラビア数字で指定してね"
                 temp_message = True
@@ -844,11 +844,11 @@ async def process_message(message):
                     reply = f"爆破: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
                     room_to_clean = room
 
-        if message.content.startswith("--help"):
+        if message.content.startswith("-help"):
             reply = usage.jp
             temp_message = True
 
-        if message.content.startswith("--help-en"):
+        if message.content.startswith("-help-en"):
             reply = usage.en
             temp_message = True
 
