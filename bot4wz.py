@@ -206,7 +206,7 @@ class Player(object):
         prev = rates.pop(0)
         if not rates:
             return 0.5 # 0勝0敗が他で扱いにくいので便宜上
-        for next_ in rate:
+        for next_ in rates:
             if prev < next_:
                 win += 1
             else:
@@ -252,10 +252,6 @@ class Game(object):
         self.timestamp = now()
         self.win_team = win_team
 
-def split(players):
-    half = len(players) // 2
-    delta_min = float("infinity")
-
 def set_rate(user, ladder, rate):
     for player in players:
         if player.id == user.id:
@@ -266,6 +262,7 @@ def set_rate(user, ladder, rate):
     return True
 
 def player_registration(user, manually=False):
+    global players
     if manually:
         player = Player(user=user, rating_booster=0)
     else:
@@ -308,8 +305,8 @@ async def customized_elo_rating(room):
 
     Ra = sum(player.latest_rate(ladder) for player in room.team1)
     Rb = sum(player.latest_rate(ladder) for player in room.team2)
-    team1_winrate_avg = sum(player.latest_winrate(30) for player in room.team1) / len(room.team1)
-    team2_winrate_avg = sum(player.latest_winrate(30) for player in room.team2) / len(room.team2)
+    team1_winrate_avg = sum(player.latest_winrate(30, ladder) for player in room.team1) / len(room.team1)
+    team2_winrate_avg = sum(player.latest_winrate(30, ladder) for player in room.team2) / len(room.team2)
 
     deltas = {}
     for player in players:
@@ -331,16 +328,17 @@ async def customized_elo_rating(room):
             "rate": player.latest_rate(ladder) + delta,
             "timestamp": now()
         })
-        deltas.append({"name": player.name, "delta": delta})
+        deltas[player.id] = delta
 
-    team1_deltas = [(player.name, deltas[player.name]) for player in room.team1]
-    team2_deltas = [(player.name, deltas[player.name]) for player in room.team2]
+    team1_deltas = [(player.name, deltas[player.id]) for player in room.team1]
+    team2_deltas = [(player.name, deltas[player.id]) for player in room.team2]
     game = Game(id=len(games)+1, host_id=room.owner.id, ladder=ladder,
                 team1_deltas=team1_deltas, team2_deltas=team2_deltas, win_team=room.win_team)
     games.append(game)
 
     await save_rating_system()
     return game
+    rate
 
 
 def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg):
@@ -424,6 +422,10 @@ async def save_bot_state():
         pickle.dump(room_number_pool, f)
     with open(temp_message_ids_file_name, "wb") as f:
         pickle.dump(temp_message_ids, f)
+    with open(players_file_name, "wb") as f:
+        pickle.dump(players, f)
+    with open(games_file_name, "wb") as f:
+        pickle.dump(games, f)
 
 async def load(bot):
     global rooms
@@ -706,6 +708,7 @@ async def process_message(message):
                             reply = "その番号の部屋がないか、ホストではないため勝敗報告できません"
                             temp_message = True
                 if target_room and target_room.fighting:
+                    room = target_room
                     # process_umariでowner_playerの存在が保障される
                     for player in players:
                         if player.id == room.owner.id:
@@ -720,7 +723,7 @@ async def process_message(message):
                     if command == "--lose":
                         room.win_team = int(not owner_team) + 1
                     game = await customized_elo_rating(room)
-                    delete_room(target_room)
+                    delete_room(room)
                     reply = "\n".join([
                         "お疲れさまでした",
                         f"勝利チーム：{game.win_team}",
