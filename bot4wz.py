@@ -343,7 +343,7 @@ async def customized_elo_rating(room):
 
 
 def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg):
-    base_K = 26 # たまひよが約26
+    base_K = 16 # 標準16, たまひよは約26
     ladder = room.ladder
 
     # 復帰者に補正をつける
