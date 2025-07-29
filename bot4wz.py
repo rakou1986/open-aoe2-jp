@@ -739,7 +739,7 @@ async def process_message(message):
                     temp_message = True
                 else:
                     user = message.mentions[0]
-                    if len(list(filter(lambda player: player.id == user.id, players))) == 0:
+                    if len(list(filter(lambda player: player.id == user.id, players))) != 0:
                         reply = f"登録済みのプレイヤーです"
                     else:
                         player = player_registration(user, manually=True)
