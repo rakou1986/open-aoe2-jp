@@ -262,7 +262,8 @@ def get_ranking(ladder, with_id=False):
     for player in players:
         games = len(player.rate_history[ladder]) - 1
         if games != 0:
-            ranking.append([player.name, player.latest_rate(ladder), player.streak(ladder), games, player.id])
+            ranking.append([player.name, player.latest_rate(ladder), player.streak(ladder), games,
+            "-".join( [str(history["rate"]) for history in player.rate_history[ladder] ]), player.id])
     ranking.sort(key=lambda list_: list_[1], reverse=True)
     if not with_id:
         for player in ranking:
@@ -775,19 +776,19 @@ async def process_message(message):
                     r_michi = list(filter(lambda row: row[-1] == player.id, get_ranking("Michi", with_id=True)))
 
                     if r_ara:
-                        rank, name, rate, streak, games, id_ = r_ara[0]
+                        rank, name, rate, streak, games, plot, id_ = r_ara[0]
                         s1 = f"Arabia: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
                     else:
                         s1 = "Arabia: 未プレイ"
 
                     if r_ln:
-                        rank, name, rate, streak, games, id_ = r_ln[0]
+                        rank, name, rate, streak, games, plot, id_ = r_ln[0]
                         s2 = f"LN: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
                     else:
                         s2 = "LN: 未プレイ"
 
                     if r_michi:
-                        rank, name, rate, streak, games, id_ = r_michi[0]
+                        rank, name, rate, streak, games, plot, id_ = r_michi[0]
                         s3 = f"Michi: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
                     else:
                         s3 = "Michi: 未プレイ"
@@ -806,7 +807,7 @@ async def process_message(message):
                 file_ = io.StringIO()
                 files_.append(file_)
                 writer = csv.writer(file_)
-                writer.writerow(["順位", "名前", "レート", "連勝/連敗", "試合数"])
+                writer.writerow(["順位", "名前", "レート", "連勝/連敗", "試合数", "レート推移（分析用、区切り文字ハイフン'-'）"])
                 ranking = get_ranking(ladder)
                 for player in ranking:
                     writer.writerow(player)
