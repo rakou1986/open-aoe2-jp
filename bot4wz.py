@@ -35,8 +35,10 @@ Ctrl + C
 """
 
 import asyncio
+import csv
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
+import io
 import json
 import os
 import itertools
@@ -88,6 +90,7 @@ bot_commands = [
     "-no", "-in", "-join",
     "-kick",
     "-win", "-lose",
+    "-info", "-players",
     "-register", "-setrate", "-getinit",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
@@ -492,6 +495,8 @@ async def process_message(message):
         reply = "初期値。問題が起きているのでrakouに連絡"
         room_to_clean = None
         temp_message = False
+        file_ = None
+        filename = None
 
         for command in ["--yyk", "-call", "-create", "-reserve", "-heybros", "-ln", "-michi"]:
             if message.content.startswith(command):
@@ -729,6 +734,28 @@ async def process_message(message):
                         "チーム2：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team2_deltas]),
                         ])
 
+        if message.content.startswith("-info"):
+            pass
+
+        if message.content.startswith("-players"):
+            ladder = message.content.split("-players")[1].strip()
+            if not ladder in ladder_dict.keys():
+                reply = f"次のいずれかのレーティングを指定してください：{', '.join(ladder_dict.keys())}"
+                temp_message = True
+            else:
+                filename = now().strftime(f"%Y-%m-%d_%H%M_{ladder}_players.csv")
+                file_ = io.StringIO()
+                writer = csv.writer(file_)
+                writer.writerow(["順位", "名前", "レート", "連勝/連敗"])
+                players_ = sorted([ [player.name, player.latest_rate(ladder), player.streak(ladder)] for player in players],
+                    key=lambda list_: list_[1],
+                    reverse=True)
+                players_ = [ [i+1] + player for i, player in enumerate(players_)]
+                for player in players_:
+                    writer.writerow(player)
+                file_.seek(0)
+                reply = f"順位表：{ladder_dict[ladder]}"
+
         if message.content.startswith("-register"):
             if message.author.id == 311505132980273153: # rakou
                 if not message.mentions:
@@ -873,7 +900,7 @@ async def process_message(message):
         global last_process_message_timestamp
         last_process_message_timestamp = now()
 
-        return reply, room_to_clean, temp_message
+        return reply, room_to_clean, temp_message, file_, filename
 
 async def room_cleaner(room, received_message, sent_message):
     room.garbage_queue.append(sent_message.id)
@@ -971,8 +998,15 @@ async def on_message(message):
             if message.content.startswith(command):
                 jst = now() + timedelta(hours=9)
                 print(f"INPUT:\n{message.content}\n{jst}\n")
-                reply, room_to_clean, temp_message = await process_message(message)
-                sent_message = await message.channel.send(reply, allowed_mentions=allowed_mentions)
+                reply, room_to_clean, temp_message, file_, filename = await process_message(message)
+                if file_ and filename:
+                    sent_message = await message.channel.send(
+                        content=reply,
+                        allowed_mentions=allowed_mentions,
+                        file=discord.File(fp=file_, filename=filename),
+                        )
+                else:
+                    sent_message = await message.channel.send(reply, allowed_mentions=allowed_mentions)
                 if room_to_clean:
                     await room_cleaner(room_to_clean, message, sent_message)
                 if temp_message:
