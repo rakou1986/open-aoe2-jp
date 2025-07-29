@@ -3,20 +3,34 @@ jp = """\
 つかいかた:
 
 ホスト
-  warzone部屋建て --yyk 部屋名（デフォルト無制限）
-  lazuaoe部屋建て --lzyyk 部屋名（デフォルトLN）
-  1～6人を募集 --yyk1～6 部屋名
-  爆破する --bakuha 部屋番号（1つしか建ててないときは省略可能）
+  アラビア部屋建て --yyk 部屋名（デフォルト無制限）
+  LN部屋建て -ln 部屋名
+  みち部屋建て -michi 部屋名
+  1～6人を募集 --yyk1～6, -ln1～6, -michi1～6（追慕は -kick @名前 のあと他の人の参加で）
+  キック（不在時等） -kick @メンション
+  爆破する -bakuha 部屋番号（1つしか建ててないときは省略可能）
 
 参加者
-  参加する --no 部屋番号（1つしか部屋がないときは省略可能）
-  ぬける   --nuke 部屋番号（1つの部屋にしか入ってないときは省略可能）
+  参加する -no 部屋番号（1つしか部屋がないときは省略可能）
+  ぬける   -nuke 部屋番号（1つの部屋にしか入ってないときは省略可能）
+
+勝敗報告
+  勝ち（ホスト視点） -win
+  負け（ホスト視点） -lose
+
+情報表示
+  プレイヤー情報表示 -info プレイヤー名（非メンション、最初に部分一致する1名分）
+  プレイヤー一覧(CSV)取得 -players
+
+移行・移行直後調整用
+  -register @メンション
+  -setrate @メンション レーティング（Arabia, LN, Michi） レートの数
 
 その他
-  部屋一覧 --rooms
-  無理矢理部屋を消す（干しっぱなし用、管理者使用推奨） --force-bakuha-tekumakumayakonn-tekumakumayakonn 部屋番号
-  つかいかたを出す --help
-  How to use in English: --help-en
+  部屋一覧 -rooms
+  無理矢理部屋を消す（干しっぱなし用、管理者使用推奨） -force-bakuha-tekumakumayakonn-tekumakumayakonn 部屋番号
+  つかいかたを出す -help
+  How to use in English: -help-en
 ```
 """
 
