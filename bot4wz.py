@@ -759,7 +759,7 @@ async def process_message(message):
                 if not ladder in ladder_dict.keys():
                     raise Exception()
             except:
-                reply = "使い方：`-graph1 レーティング(Arabia, LN, Michi) 名前（部分一致）`"
+                reply = "使い方：`-graph1 レーティング(arabia, LN, michi) 名前（部分一致）`"
             else:
                 match = list(filter(lambda player: part_of_name in player.name, players))
                 for player in match:
@@ -775,7 +775,7 @@ async def process_message(message):
                 if not ladder in ladder_dict.keys():
                     raise Exception()
             except:
-                reply = "使い方：`-graph2 レーティング(Arabia, LN, Michi) 名前（部分一致）`"
+                reply = "使い方：`-graph2 レーティング(arabia, LN, michi) 名前（部分一致）`"
             else:
                 match = list(filter(lambda player: part_of_name in player.name, players))
                 for player in match:
@@ -834,7 +834,7 @@ async def process_message(message):
                         reply = f"登録済みのプレイヤーです"
                     else:
                         player = player_registration(user, manually=True)
-                        reply = f"登録：{player.name} 初期レート：Arabia({player.rate_history['Arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) Michi({player.rate_history['Michi'][-1]['rate']})"
+                        reply = f"登録：{player.name} 初期レート：arabia({player.rate_history['arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) michi({player.rate_history['michi'][-1]['rate']})"
 
         if message.content.startswith("-setrate"):
             if message.author.id == 311505132980273153: # rakou

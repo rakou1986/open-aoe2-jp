@@ -6,6 +6,7 @@ jp = """\
   アラビア部屋建て --yyk 部屋名（デフォルト無制限）
   LN部屋建て -ln 部屋名
   みち部屋建て -michi 部屋名
+  爆ラン部屋建て -bakuran 部屋名
   1～6人を募集 --yyk1～6, -ln1～6, -michi1～6（追慕は -kick @名前 のあと他の人の参加で）
   キック（不在時等） -kick @メンション
   爆破する -bakuha 部屋番号（1つしか建ててないときは省略可能）
@@ -47,11 +48,11 @@ Host
   Create room: --yyk [room name]（無制限 is default）
   無制限 means all welcome.
     --yyk is the same as these:
-      -call, -create, -reserve, -heybros
+      -call, -create
 
   Call 1 to 6 brothers: --yyk1to6 [room name]（無制限 is default）
     --yyk1to6 is the same as these:
-      -call1to6, -create1to6, -reserve1to6, -heybros1to6
+      -call1to6, -create1to6
 
     Example: Call 3 brothers for ranked match.
       -call3 [room name]
