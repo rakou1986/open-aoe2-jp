@@ -109,9 +109,10 @@ players_file_name = ".bot4wz.players.pickle"
 games = []
 games_file_name = ".bot4wz.games.pickle"
 ladder_dict = {
-    "Arabia": "アラビア系/ルーンストーン",
+    "arabia": "アラビア系/ルーンストーン",
     "LN": "遊牧系",
-    "Michi": "みち",
+    "michi": "みち",
+    "bakuran": "爆ラン",
 }
 
 
