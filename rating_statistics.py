@@ -159,3 +159,57 @@ def visualize_player_rate(players, ladder, player_id):
     rate = player.latest_rate(ladder)
     bytesio, image_bytes = draw_histogram(histogram, rate, ladder, name=player.name, label="Player rate", save=False)
     return bytesio, image_bytes
+
+def draw_simple_rate_plot(rates, width=1500, height=600):
+    margin = 60
+    min_rate = min(rates)
+    max_rate = max(rates)
+    rate_range = max_rate - min_rate or 1
+
+    num_points = len(rates)
+    scale_x = (width - 2 * margin) / (num_points - 1)
+    scale_y = (height - 2 * margin) / rate_range
+
+    img = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(img)
+
+    font = ImageFont.truetype("fonts/NotoSansCJK-Regular.ttc", size=24)
+
+    # 折れ線の点列
+    points = [(
+        margin + i * scale_x,
+        height - margin - (rate - min_rate) * scale_y)
+        for i, rate in enumerate(rates)]
+
+    # 線を描く
+    for i in range(1, len(points)):
+        draw.line([points[i - 1], points[i]], fill="black", width=2)
+
+    # 横軸（インデックス）にラベルを追加（5ステップごと）
+    for i in range(num_points):
+        if i % max(1, num_points // 20) == 0:
+            x = margin + i * scale_x
+            draw.line((x, height - margin, x, height - margin + 5), fill="black")
+            if font:
+                draw.text((x - 10, height - margin + 8), str(i), fill="black", font=font)
+
+    # 縦軸（レート）にラベルを追加（5段階）
+    for r in range(min_rate, max_rate + 1, max(1, rate_range // 5)):
+        y = height - margin - (r - min_rate) * scale_y
+        draw.line((margin - 5, y, margin, y), fill="black")
+        if font:
+            draw.text((5, y - 8), str(r), fill="black", font=font)
+
+        # 水平な点線を引く（marginから右端まで）
+        dash_length = 8
+        gap_length = 6
+        x = margin
+        while x < width - margin:
+            draw.line((x, y, min(x + dash_length, width - margin), y), fill="#333333")
+            x += dash_length + gap_length
+
+    # 結果画像をBytesIOで返す
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf

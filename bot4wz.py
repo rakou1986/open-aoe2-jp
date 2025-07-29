@@ -49,7 +49,7 @@ import sys
 import discord
 from discord.ext import commands
 
-from rating_statistics import find_initial_rate, visualize_player_rate
+from rating_statistics import find_initial_rate, visualize_player_rate, draw_simple_rate_plot
 
 TOKEN = None
 
@@ -90,7 +90,7 @@ bot_commands = [
     "-no", "-join",
     "-kick",
     "-win", "-lose",
-    "-info", "-players", "-graph1",
+    "-info", "-players", "-graph1", "-graph2",
     "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
@@ -764,6 +764,23 @@ async def process_message(message):
                     files_.append(file_)
                     filenames.append(now().strftime(f"%Y-%m-%d_%H%M_position_of_{player.name}.png"))
                 reply = "全体レートに対する位置"
+
+        if message.content.startswith("-graph2"):
+            try:
+                ladder, part_of_name = message.content.split("-graph2")[1].strip().split()
+                if not ladder in ladder_dict.keys():
+                    raise Exception()
+            except:
+                reply = "使い方：`-graph2 レーティング(Arabia, LN, Michi) 名前（部分一致）`"
+            else:
+                match = list(filter(lambda player: part_of_name in player.name, players))
+                for player in match:
+                    rates = [history["rate"] for history in player.rate_history[ladder]]
+                    file_ = draw_simple_rate_plot(rates)
+                    file_.seek(0)
+                    files_.append(file_)
+                    filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))
+                reply = "レート推移"
 
         if message.content.startswith("-info"):
             part_of_name = message.content.split("-info")[1].strip()
