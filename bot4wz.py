@@ -49,7 +49,7 @@ import sys
 import discord
 from discord.ext import commands
 
-from rating_statistics import find_initial_rate
+from rating_statistics import find_initial_rate, visualize_player_rate
 
 TOKEN = None
 
@@ -749,7 +749,20 @@ async def process_message(message):
                         ])
 
         if message.content.startswith("-graph1"):
-            pass
+            try:
+                ladder, part_of_name = message.content.split("-graph1")[1].strip().split()
+                if not ladder in ladder_dict.keys():
+                    raise Exception()
+            except:
+                reply = "使い方：`-graph1 レーティング(Arabia, LN, Michi) 名前（部分一致）`"
+            else:
+                match = list(filter(lambda player: part_of_name in player.name, players))
+                for player in match:
+                    file_, _ = visualize_player_rate(players, ladder, player.id)
+                    file_.seek(0)
+                    files_.append(file_)
+                    filenames.append(f"{player.name}.png")
+                reply = "全体レートに対する現在位置"
 
         if message.content.startswith("-info"):
             part_of_name = message.content.split("-info")[1].strip()

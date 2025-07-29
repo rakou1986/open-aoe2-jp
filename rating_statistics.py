@@ -130,7 +130,7 @@ def draw_histogram(histogram, highlight_rate, ladder, name, label, save=False):
         with open(image_path, "wb") as f:
             f.write(image_bytes)
 
-    return image_bytes
+    return buf, image_bytes
 
 def find_initial_rate(players, ladder, visualize=False, save=False):
     """指定したラダーのヒストグラムを作り、
@@ -142,13 +142,14 @@ def find_initial_rate(players, ladder, visualize=False, save=False):
     initial_rate = 8000 # playersが空の場合
     method = None
     image_bytes = None
+    bytesio = None
     if players:
         histogram = make_rate_histogram(players, ladder)
         initial_rate, method = pick_peak_or_median(histogram, players, ladder)
         if visualize:
-            image_bytes = draw_histogram(histogram, initial_rate, ladder, name=method, label="Initial rate", save=save)
+            bytesio, image_bytes = draw_histogram(histogram, initial_rate, ladder, name=method, label="Initial rate", save=save)
     print(f"find_initial_rate: initial_rate={initial_rate}, ladder={ladder}, method={method}")
-    return initial_rate, method, image_bytes
+    return initial_rate, method, image_bytes, bytesio
 
 def visualize_player_rate(players, ladder, player_id):
     histogram = make_rate_histogram(players, ladder)
@@ -156,5 +157,5 @@ def visualize_player_rate(players, ladder, player_id):
     if not player:
         return "player not found"
     rate = player.latest_rate(ladder)
-    image_bytes = draw_histogram(histogram, rate, ladder, name=player.name, label="Player rate", save=False)
-    return image_bytes
+    bytesio, image_bytes = draw_histogram(histogram, rate, ladder, name=player.name, label="Player rate", save=False)
+    return bytesio, image_bytes
