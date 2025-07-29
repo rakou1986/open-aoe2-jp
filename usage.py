@@ -60,7 +60,7 @@ Host
 Guest
   Join: --no [room number] (The room number can be omitted if there is only one room)
     --no is the same as these:
-      --in, --join
+      --join
 
   Dismiss: --nuke [room number] (The room number can be omitted if you are in only one room)
     --nuke is the same as these:
