@@ -21,7 +21,7 @@ jp = """\
 
 情報表示
   プレイヤー情報表示 -info プレイヤー名（非メンション、最初に部分一致する1名分）
-  プレイヤー一覧(CSV)取得 -players (Arabia, LN, Michiから選択）
+  プレイヤー一覧(CSV)取得 -players (arabia, LN, michi, bakuranから選択）
   全体レートに対する位置 -graph1 プレイヤー名（部分一致）
   レート推移 -graph2 プレイヤー名（部分一致）
   自動登録の初期レート表示 -getinit
@@ -29,7 +29,7 @@ jp = """\
 
 移行・移行直後調整用（ひとまずrakou用）
   -register @メンション
-  -setrate @メンション レーティング（Arabia, LN, Michi） レートの数
+  -setrate @メンション レーティング（arabia, LN, michi, bakuran） レートの数
 
 その他
   部屋一覧 -rooms
