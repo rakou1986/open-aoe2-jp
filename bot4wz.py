@@ -845,11 +845,11 @@ async def process_message(message):
                 else:
                     user = message.mentions[0]
                     command, mention, ladder, rate = parts
-                    rate = to_int(rate) + 8000 # もうマイナスレート問題（？）が出ないように移行時に底上げ
+                    rate = to_int(rate) + 7000 # もうマイナスレート問題（？）が出ないように移行時に底上げ
                     if ladder in ladder_dict.keys() and rate is not None:
                         player_found = set_rate(user, ladder, rate)
                         if player_found:
-                            reply = f"設定：{get_name(user)} レーティング：{ladder_dict[ladder]} レート：{rate}(+8000)"
+                            reply = f"設定：{get_name(user)} レーティング：{ladder_dict[ladder]} レート：{rate}(+7000)"
                         else:
                             reply = "error"
                             temp_message = True

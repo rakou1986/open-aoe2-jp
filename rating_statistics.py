@@ -63,7 +63,7 @@ def pick_peak_or_median(histogram, players, ladder, min_peak_distance=200):
             return int(statistics.median([player.latest_rate(ladder) for player in players])), "median"
         else:
             # 開発中はplayersがない時もあるのでとりあえず
-            return 8000, "fixed"
+            return 7000, "fixed"
 
 def draw_histogram(histogram, highlight_rate, ladder, name, label, save=False):
     """自動で割り当てられる初期レートや、あるプレイヤーのレートがヒストグラムのどこにあるのか示す画像を返す"""
@@ -139,7 +139,7 @@ def find_initial_rate(players, ladder, visualize=False, save=False):
     methodは山を返したならpeak, 中央値を返したならmedian。
     visualizeしたなら画像も返す。
     """
-    initial_rate = 8000 # playersが空の場合
+    initial_rate = 7000 # playersが空の場合
     method = None
     image_bytes = None
     bytesio = None
