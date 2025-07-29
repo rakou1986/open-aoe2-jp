@@ -761,8 +761,8 @@ async def process_message(message):
                     file_, _ = visualize_player_rate(players, ladder, player.id)
                     file_.seek(0)
                     files_.append(file_)
-                    filenames.append(f"{player.name}.png")
-                reply = "全体レートに対する現在位置"
+                    filenames.append(now().strftime(f"%Y-%m-%d_%H%M_position_of_{player.name}.png"))
+                reply = "全体レートに対する位置"
 
         if message.content.startswith("-info"):
             part_of_name = message.content.split("-info")[1].strip()
@@ -852,7 +852,12 @@ async def process_message(message):
             reply = "現在の自動登録初期レート\n" + str(init)
 
         if message.content.startswith("-getinitvisual"):
-            pass
+            for ladder in ladder_dict.keys():
+                _, _, _, bytesio = find_initial_rate(players, ladder, visualize=True)
+                bytesio.seek(0)
+                files_.append(bytesio)
+                filenames.append(now().strftime(f"%Y-%m-%d_%H%M_initial_rate_of_{ladder}.png"))
+            reply = "初期レートの位置"
 
         for command in ["-nuke", "-out", "-leave", "-dismiss"]:
             if message.content.startswith(command):
