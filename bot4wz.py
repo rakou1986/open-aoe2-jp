@@ -83,9 +83,7 @@ allowed_mentions = discord.AllowedMentions(users=True)
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 bot_commands = [
-    "--yyk", "-call", "-create", "-reserve", "-heybros",
-    "-ln",
-    "-michi",
+    "--yyk", "-call", "-create", "-ln", "-michi", "-bakuran",
     "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
     "-no", "-join",
     "-kick",
@@ -517,7 +515,7 @@ async def process_message(message):
         files_ = []
         filenames = []
 
-        for command in ["--yyk", "-call", "-create", "-reserve", "-heybros", "-ln", "-michi"]:
+        for command in ["--yyk", "-call", "-create", "-ln", "-michi", "-bakuran"]:
             if message.content.startswith(command):
                 capacity = 8
                 name = message.content.split(command)[1]
@@ -529,9 +527,11 @@ async def process_message(message):
                 if command == "-ln":
                     ladder = "LN"
                 elif command == "-michi":
-                    ladder = "Michi"
+                    ladder = "michi"
+                elif command == "-bakuran":
+                    ladder = "bakuran"
                 else:
-                    ladder = "Arabia"
+                    ladder = "arabia"
                 try:
                     room = Room(author=message.author, name=name, capacity=capacity, ladder=ladder)
                     rooms.append(room)
