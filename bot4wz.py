@@ -523,15 +523,19 @@ async def process_message(message):
                     if name[0] in ["1", "2", "3", "4", "5", "6", "１", "２", "３", "４", "５", "６"]:
                         capacity = to_int(name[0]) + 1
                         name = name.replace(name[0], "")
-                name = "無制限" if not name else name.strip()
+                name = None if not name else name.strip()
                 if command == "-ln":
                     ladder = "LN"
+                    name = "LN" if name is None else name
                 elif command == "-michi":
                     ladder = "michi"
+                    name = "みち" if name is None else name
                 elif command == "-bakuran":
                     ladder = "bakuran"
+                    name = "爆ラン" if name is None else name
                 else:
                     ladder = "arabia"
+                    name = "ルーンストーン" if name is None else name
                 try:
                     room = Room(author=message.author, name=name, capacity=capacity, ladder=ladder)
                     rooms.append(room)
