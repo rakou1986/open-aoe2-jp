@@ -88,7 +88,7 @@ bot_commands = [
     "-no", "-in", "-join",
     "-kick",
     "-win", "-lose",
-    "-register", "-setrate",
+    "-register", "-setrate", "-getinit",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
     "-force-bakuha-tekumakumayakonn-tekumakumayakonn",
@@ -186,11 +186,12 @@ class Room(object):
 
 class Player(object):
 
-    def __init__(self, user, ladder_initial_rate={ladder: find_initial_rate(players, ladder)[0] for ladder in ladder_dict.keys()}, rating_booster=30):
+    def __init__(self, user, rating_booster=30):
         self.id = user.id
         self.name = get_name(user)
         self.rate_history = {}
         self.rating_booster = rating_booster # 最大値30。新規は30、久しぶりは15加算。何回久しぶりになっても30まで。
+        ladder_initial_rate = {ladder: find_initial_rate(players, ladder)[0] for ladder in ladder_dict.keys()}
         for ladder in ladder_dict.keys():
             self.rate_history.update({
                 ladder: [{
@@ -765,6 +766,10 @@ async def process_message(message):
                     else:
                         reply = "error"
                         temp_message = True
+
+        if message.content.startswith("-getinit"):
+            init = {ladder: tuple(find_initial_rate(players, ladder))[0:2] for ladder in ladder_dict.keys()}
+            reply = "現在の自動登録初期レート\n" + str(init)
 
         for command in ["-nuke", "-out", "-leave", "-dismiss"]:
             if message.content.startswith(command):
