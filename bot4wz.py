@@ -90,8 +90,8 @@ bot_commands = [
     "-no", "-in", "-join",
     "-kick",
     "-win", "-lose",
-    "-info", "-players",
-    "-register", "-setrate", "-getinit",
+    "-info", "-players", "-graph1",
+    "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
     "-force-bakuha-tekumakumayakonn-tekumakumayakonn",
@@ -255,6 +255,20 @@ class Game(object):
         self.team2_deltas = team2_deltas
         self.timestamp = now()
         self.win_team = win_team
+
+def get_ranking(ladder, with_id=False):
+    """試合数1以上のプレイヤーの順位表を返す"""
+    ranking = []
+    for player in players:
+        games = len(player.rate_history[ladder]) - 1
+        if games != 0:
+            ranking.append([player.name, player.latest_rate(ladder), player.streak(ladder), games, player.id])
+    ranking.sort(key=lambda list_: list_[1], reverse=True)
+    if not with_id:
+        for player in ranking:
+            player.pop(-1)
+    ranking = [ [i+1] + player for i, player in enumerate(ranking)]
+    return ranking
 
 def set_rate(user, ladder, rate):
     for player in players:
@@ -495,8 +509,8 @@ async def process_message(message):
         reply = "初期値。問題が起きているのでrakouに連絡"
         room_to_clean = None
         temp_message = False
-        file_ = None
-        filename = None
+        files_ = []
+        filenames = []
 
         for command in ["--yyk", "-call", "-create", "-reserve", "-heybros", "-ln", "-michi"]:
             if message.content.startswith(command):
@@ -734,8 +748,40 @@ async def process_message(message):
                         "チーム2：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team2_deltas]),
                         ])
 
-        if message.content.startswith("-info"):
+        if message.content.startswith("-graph1"):
             pass
+
+        if message.content.startswith("-info"):
+            part_of_name = message.content.split("-info")[1].strip()
+            match = list(filter(lambda player: part_of_name in player.name, players))
+            if match:
+                reply = ""
+                for player in match:
+                    r_ara = list(filter(lambda row: row[-1] == player.id, get_ranking("Arabia", with_id=True)))
+                    r_ln = list(filter(lambda row: row[-1] == player.id, get_ranking("LN", with_id=True)))
+                    r_michi = list(filter(lambda row: row[-1] == player.id, get_ranking("Michi", with_id=True)))
+
+                    if r_ara:
+                        rank, name, rate, streak, games, id_ = r_ara[0]
+                        s1 = f"Arabia: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
+                    else:
+                        s1 = "Arabia: 未プレイ"
+
+                    if r_ln:
+                        rank, name, rate, streak, games, id_ = r_ln[0]
+                        s2 = f"LN: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
+                    else:
+                        s2 = "LN: 未プレイ"
+
+                    if r_michi:
+                        rank, name, rate, streak, games, id_ = r_michi[0]
+                        s3 = f"Michi: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
+                    else:
+                        s3 = "Michi: 未プレイ"
+                    reply = reply + "\n".join([player.name, s1, s2, s3, "\n"])
+            else:
+                reply = "プレイヤーが見つかりませんでした"
+                temp_message = True
 
         if message.content.startswith("-players"):
             ladder = message.content.split("-players")[1].strip()
@@ -743,15 +789,13 @@ async def process_message(message):
                 reply = f"次のいずれかのレーティングを指定してください：{', '.join(ladder_dict.keys())}"
                 temp_message = True
             else:
-                filename = now().strftime(f"%Y-%m-%d_%H%M_{ladder}_players.csv")
+                filenames.append(now().strftime(f"%Y-%m-%d_%H%M_{ladder}_players.csv"))
                 file_ = io.StringIO()
+                files_.append(file_)
                 writer = csv.writer(file_)
-                writer.writerow(["順位", "名前", "レート", "連勝/連敗"])
-                players_ = sorted([ [player.name, player.latest_rate(ladder), player.streak(ladder)] for player in players],
-                    key=lambda list_: list_[1],
-                    reverse=True)
-                players_ = [ [i+1] + player for i, player in enumerate(players_)]
-                for player in players_:
+                writer.writerow(["順位", "名前", "レート", "連勝/連敗", "試合数"])
+                ranking = get_ranking(ladder)
+                for player in ranking:
                     writer.writerow(player)
                 file_.seek(0)
                 reply = f"順位表：{ladder_dict[ladder]}"
@@ -793,6 +837,9 @@ async def process_message(message):
         if message.content.startswith("-getinit"):
             init = {ladder: tuple(find_initial_rate(players, ladder))[0:2] for ladder in ladder_dict.keys()}
             reply = "現在の自動登録初期レート\n" + str(init)
+
+        if message.content.startswith("-getinitvisual"):
+            pass
 
         for command in ["-nuke", "-out", "-leave", "-dismiss"]:
             if message.content.startswith(command):
@@ -900,7 +947,7 @@ async def process_message(message):
         global last_process_message_timestamp
         last_process_message_timestamp = now()
 
-        return reply, room_to_clean, temp_message, file_, filename
+        return reply, room_to_clean, temp_message, files_, filenames
 
 async def room_cleaner(room, received_message, sent_message):
     room.garbage_queue.append(sent_message.id)
@@ -998,12 +1045,15 @@ async def on_message(message):
             if message.content.startswith(command):
                 jst = now() + timedelta(hours=9)
                 print(f"INPUT:\n{message.content}\n{jst}\n")
-                reply, room_to_clean, temp_message, file_, filename = await process_message(message)
-                if file_ and filename:
+                reply, room_to_clean, temp_message, files_, filenames = await process_message(message)
+                if len(files_) == len(filenames) and len(files_) != 0:
+                    files = []
+                    for idx in range(len(files_)):
+                        files.append(discord.File(fp=files_[idx], filename=filenames[idx]))
                     sent_message = await message.channel.send(
                         content=reply,
                         allowed_mentions=allowed_mentions,
-                        file=discord.File(fp=file_, filename=filename),
+                        files=files
                         )
                 else:
                     sent_message = await message.channel.send(reply, allowed_mentions=allowed_mentions)
