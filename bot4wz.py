@@ -849,7 +849,7 @@ async def process_message(message):
                     if ladder in ladder_dict.keys() and rate is not None:
                         player_found = set_rate(user, ladder, rate)
                         if player_found:
-                            reply = f"設定：{get_name(user)} ラダー：{ladder_dict[ladder]} レート：{rate}(+8000)"
+                            reply = f"設定：{get_name(user)} レーティング：{ladder_dict[ladder]} レート：{rate}(+8000)"
                         else:
                             reply = "error"
                             temp_message = True
