@@ -705,11 +705,11 @@ async def process_message(message):
                     else:
                         for room_ in rooms:
                             if room_number == room_.number:
-                                if message.author.id == room_.owner.id:
+                                if message.author.id == room_.owner.id and room_.fighting:
                                     target_room = room_
                                     break
                         else:
-                            reply = "その番号の部屋がないか、ホストではないため勝敗報告できません"
+                            reply = "その番号の部屋がないか、埋まっていないか、ホストではないため勝敗報告できません"
                             temp_message = True
                 if target_room and target_room.fighting:
                     room = target_room
