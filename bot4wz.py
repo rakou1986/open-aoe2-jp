@@ -791,28 +791,16 @@ async def process_message(message):
             if match:
                 reply = ""
                 for player in match:
-                    r_ara = list(filter(lambda row: row[-1] == player.id, get_ranking("Arabia", with_id=True)))
-                    r_ln = list(filter(lambda row: row[-1] == player.id, get_ranking("LN", with_id=True)))
-                    r_michi = list(filter(lambda row: row[-1] == player.id, get_ranking("Michi", with_id=True)))
-
-                    if r_ara:
-                        rank, name, rate, streak, games, plot, id_ = r_ara[0]
-                        s1 = f"Arabia: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
-                    else:
-                        s1 = "Arabia: 未プレイ"
-
-                    if r_ln:
-                        rank, name, rate, streak, games, plot, id_ = r_ln[0]
-                        s2 = f"LN: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
-                    else:
-                        s2 = "LN: 未プレイ"
-
-                    if r_michi:
-                        rank, name, rate, streak, games, plot, id_ = r_michi[0]
-                        s3 = f"Michi: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
-                    else:
-                        s3 = "Michi: 未プレイ"
-                    reply = reply + "\n".join([player.name, s1, s2, s3, "\n"])
+                    reply = reply + player.name + "\n"
+                    for ladder in ladder_dict.keys():
+                        ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
+                        if ranking:
+                            rank, name, rate, streak, games, plot, id_ = ranking[0]
+                            s = f"{ladder}: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
+                        else:
+                            s = f"{ladder}: 未プレイ"
+                        reply = reply + s + "\n"
+                    reply = reply + "\n"
             else:
                 reply = "プレイヤーが見つかりませんでした"
                 temp_message = True
