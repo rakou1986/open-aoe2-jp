@@ -87,7 +87,7 @@ bot_commands = [
     "-ln",
     "-michi",
     "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
-    "-no", "-in", "-join",
+    "-no", "-join",
     "-kick",
     "-win", "-lose",
     "-info", "-players", "-graph1",
@@ -576,7 +576,7 @@ async def process_message(message):
                             reply = f"爆破: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + " ".join(f"{member.mention}" for member in room.members)
                             room_to_clean = room
 
-        for command in ["-no", "-in", "-join"]:
+        for command in ["-no", "-join"]:
             if message.content.startswith(command):
                 room_number = message.content.split(command)[1]
                 room = None
