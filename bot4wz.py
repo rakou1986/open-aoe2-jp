@@ -613,7 +613,7 @@ async def process_message(message):
                         process_umari(room)
                         reply = "".join([f"[IN] `{get_name(message.author)}`\n",
                             f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n",
-                            f"レーティング：{ladder_dict([room.ladder])}\n",
+                            f"レーティング：{ladder_dict[room.ladder]}\n",
                             " ".join(f"{member.mention}" for member in room.members) + "\n",
                             f"チーム1:【{sum(player.latest_rate(room.ladder) for player in room.team1)}】\n",
                             " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team1) + "\n",
@@ -784,6 +784,9 @@ async def process_message(message):
                         else:
                             room.members.pop(room.members.index(message.author))
                             room.last_notice_timestamp = now()
+                            room.fighting = False
+                            room.team1 = []
+                            room.team2 = []
                             reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[OUT] `{get_name(message.author)}`"
                             room_to_clean = room
                     elif len(entered_rooms) == 0:
@@ -816,6 +819,9 @@ async def process_message(message):
                             else:
                                 room.members.pop(room.members.index(message.author))
                                 room.last_notice_timestamp = now()
+                                room.fighting = False
+                                room.team1 = []
+                                room.team2 = []
                                 reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + f"\n[OUT] `{get_name(message.author)}`"
                                 room_to_clean = room
 
