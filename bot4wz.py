@@ -294,6 +294,9 @@ def process_umari(room):
     for member in room.members:
         for player in players:
             if player.id == member.id:
+                current_name = get_name(member)
+                if player.name != current_name:
+                    player.name = current_name
                 players_.append(player)
                 break
         else:
@@ -495,7 +498,7 @@ def to_int(string):
 def get_name(member):
     """サーバーニックネーム、表示名、ユーザー名（グローバル）の順に名前を探す"""
     if hasattr(member, "nick") and member.nick:
-        return member.nick
+        return member.nick # サーバーニックネーム
     if hasattr(member, "global_name") and member.global_name:
         return member.global_name  # 実はglobal_nameがGUI上の「表示名」らしい。display_nameではない
     return member.name # これがglobal_nameのような気がするが…
