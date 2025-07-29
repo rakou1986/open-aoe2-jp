@@ -629,12 +629,13 @@ async def process_message(message):
             if message.content.startswith(command):
                 target_room = None
                 room_number = message.content.split(command)[1].strip().split()[0]
+                room_number = to_int(room_number)
                 if not message.mentions:
                     reply = "対象を指定してね"
                     temp_message = True
                 else:
                     target = message.mentions[0]
-                    if room_number == "":
+                    if room_number is None:
                         owned_rooms = []
                         for room in rooms:
                             if message.author.id == room.owner.id:
@@ -645,22 +646,17 @@ async def process_message(message):
                             reply = "干している部屋はありません。ホスト用コマンドです"
                             temp_message = True
                         else:
-                            reply = "複数の部屋を建てたときは部屋番号を指定してね"
+                            reply = "複数の部屋を建てたときは部屋番号を指定してね。例：`-kick 1 メンション`"
                             temp_message = True
                     else:
-                        room_number = to_int(room_number)
-                        if room_number is None:
-                            reply = "部屋番号をアラビア数字で指定してね"
-                            temp_message = True
+                        for room_ in rooms:
+                            if room_number == room_.number:
+                                if message.author.id == room_.owner.id:
+                                    target_room = room_
+                                    break
                         else:
-                            for room_ in rooms:
-                                if room_number == room_.number:
-                                    if message.author.id == room_.owner.id:
-                                        target_room = room_
-                                        break
-                            else:
-                                reply = "その番号の部屋がないか、ホストではないためkickできません"
-                                temp_message = True
+                            reply = "その番号の部屋がないか、ホストではないためkickできません"
+                            temp_message = True
                     if target.id == message.author.id:
                         reply = "自分自身はkickできません"
                         temp_message = True
