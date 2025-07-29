@@ -510,7 +510,7 @@ async def process_message(message):
                 try:
                     room = Room(author=message.author, name=name, capacity=capacity, ladder=ladder)
                     rooms.append(room)
-                    reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)} レーティング：{ladder_dict[ladder]}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
+                    reply = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}  レーティング：{ladder_dict[ladder]}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
                     room_to_clean = room
                     rooms.sort(key=lambda room: room.number)
                 except RoomNumberExhaust:
@@ -613,6 +613,7 @@ async def process_message(message):
                         process_umari(room)
                         reply = "".join([f"[IN] `{get_name(message.author)}`\n",
                             f"埋まり: [{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n",
+                            f"レーティング：{ladder_dict([room.ladder])}\n",
                             " ".join(f"{member.mention}" for member in room.members) + "\n",
                             f"チーム1:【{sum(player.latest_rate(room.ladder) for player in room.team1)}】\n",
                             " ".join(f"{player.name}({player.latest_rate(room.ladder)})" for player in room.team1) + "\n",
@@ -726,7 +727,7 @@ async def process_message(message):
                     reply = "\n".join([
                         "お疲れさまでした",
                         f"勝利チーム：{game.win_team}",
-                        f"ラダー：{ladder_dict[game.ladder]}",
+                        f"レーティング：{ladder_dict[game.ladder]}",
                         "チーム1：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team1_deltas]),
                         "チーム2：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team2_deltas]),
                         ])
@@ -738,8 +739,11 @@ async def process_message(message):
                     temp_message = True
                 else:
                     user = message.mentions[0]
-                    player = player_registration(user, manually=True)
-                    reply = f"登録：{player.name} 初期レート：Arabia({player.rate_history['Arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) Michi({player.rate_history['Michi'][-1]['rate']})"
+                    if len(list(filter(lambda player: player.id == user.id, players))) == 0:
+                        reply = f"登録済みのプレイヤーです"
+                    else:
+                        player = player_registration(user, manually=True)
+                        reply = f"登録：{player.name} 初期レート：Arabia({player.rate_history['Arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) Michi({player.rate_history['Michi'][-1]['rate']})"
 
         if message.content.startswith("-setrate"):
             if message.author.id == 311505132980273153: # rakou
@@ -818,7 +822,7 @@ async def process_message(message):
         if message.content.startswith("-rooms"):
             lines = []
             for room in rooms:
-                lines.append(f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + "\n")
+                lines.append(f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}  レーティング：{ladder_dict[room.ladder]}{'【対戦中】' if room.fighting else ''}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members) + "\n")
             if lines:
                 reply = "\n".join(lines)
             else:
