@@ -784,7 +784,7 @@ async def process_message(message):
                 match = list(filter(lambda player: part_of_name in player.name, players))
                 for player in match:
                     rates = [history["rate"] for history in player.rate_history[ladder]]
-                    file_ = draw_simple_rate_plot(rates)
+                    file_ = draw_simple_rate_plot(rates, ladder, player.name)
                     file_.seek(0)
                     files_.append(file_)
                     filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))

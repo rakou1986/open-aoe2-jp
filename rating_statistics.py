@@ -160,7 +160,9 @@ def visualize_player_rate(players, ladder, player_id):
     bytesio, image_bytes = draw_histogram(histogram, rate, ladder, name=player.name, label="Player rate", save=False)
     return bytesio, image_bytes
 
-def draw_simple_rate_plot(rates, width=1500, height=600):
+def draw_simple_rate_plot(rates, ladder, name):
+    width = 1500
+    height = 600
     margin = 60
     min_rate = min(rates)
     max_rate = max(rates)
@@ -174,6 +176,11 @@ def draw_simple_rate_plot(rates, width=1500, height=600):
     draw = ImageDraw.Draw(img)
 
     font = ImageFont.truetype("fonts/NotoSansCJK-Regular.ttc", size=24)
+
+    # タイトル
+    title_font = ImageFont.truetype("fonts/NotoSansCJK-Regular.ttc", size=32)
+    title = f"{name}'s {ladder} rate history"
+    draw.text((width // 2 - 200, 10), title, fill="black", font=title_font)
 
     # 折れ線の点列
     points = [(
