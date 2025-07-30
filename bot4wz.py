@@ -1,7 +1,7 @@
 #coding: utf-8
 #!/path/to/Python_3.12.10
 
-_debug = True
+_debug = False
 
 """
 [requirements]
@@ -83,12 +83,12 @@ allowed_mentions = discord.AllowedMentions(users=True)
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 bot_commands = [
-    "--yyk", "-call", "-create", "-ln", "-michi", "-bakuran",
+    "yyk", "-call", "-create", "-ln", "-michi", "-bakuran",
     "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
     "-no", "-join",
     "-kick",
     "-win", "-lose",
-    "-info", "-players", "-graph1", "-graph2",
+    "info", "-players", "-graph1", "-graph2",
     "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
@@ -515,7 +515,7 @@ async def process_message(message):
         files_ = []
         filenames = []
 
-        for command in ["--yyk", "-call", "-create", "-ln", "-michi", "-bakuran"]:
+        for command in ["yyk", "-call", "-create", "-ln", "-michi", "-bakuran"]:
             if message.content.startswith(command):
                 capacity = 8
                 name = message.content.split(command)[1]
@@ -790,8 +790,8 @@ async def process_message(message):
                     filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))
                 reply = "レート推移"
 
-        if message.content.startswith("-info"):
-            part_of_name = message.content.split("-info")[1].strip()
+        if message.content.startswith("info"):
+            part_of_name = message.content.split("info")[1].strip()
             match = list(filter(lambda player: part_of_name in player.name, players))
             if match:
                 reply = ""
