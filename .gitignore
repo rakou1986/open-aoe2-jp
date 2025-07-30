@@ -9,3 +9,4 @@ push
 *.pickle
 histograms/
 log.txt
+personal-access-token-for-git-push.txt
