@@ -7,3 +7,5 @@ canary_token.txt
 token.txt
 push
 *.pickle
+histograms/
+log.txt
