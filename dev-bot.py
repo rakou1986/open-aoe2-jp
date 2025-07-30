@@ -345,6 +345,10 @@ async def customized_elo_rating(room):
         delta = int(Decimal(delta).quantize(Decimal("0"), ROUND_HALF_UP))
         if delta == 0:
             delta = 1 if win else -1
+        if delta < 0:
+            delta = max(-20 if room.ladder=="arabia" else -40, delta)
+        if 0 < delta:
+            delta = min(20 if room.ladder=="arabia" else 40, delta)
 
         player.rate_history[ladder].append({
             "rate": player.latest_rate(ladder) + delta,
@@ -364,7 +368,7 @@ async def customized_elo_rating(room):
 
 
 def customized_k_factor(player, room, win, player_team, team1_winrate_avg, team2_winrate_avg):
-    base_K = 16 # 標準16, たまひよは約26
+    base_K = 32 # 標準16, たまひよは約26
     ladder = room.ladder
 
     # 復帰者に補正をつける
