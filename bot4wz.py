@@ -1,7 +1,7 @@
 #coding: utf-8
 #!/path/to/Python_3.12.10
 
-_debug = True
+_debug = False
 
 """
 [requirements]
