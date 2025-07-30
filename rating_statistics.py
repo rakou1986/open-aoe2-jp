@@ -19,7 +19,7 @@ def get_player(players, player_id):
     return player
 
 
-def make_rate_histogram(players, ladder, bin_width=20):
+def make_rate_histogram(players, ladder, bin_width=150):
     """ラダーごとのレートのヒストグラムを作る"""
     histogram = defaultdict(int)
     for player in players:
