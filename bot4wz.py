@@ -1153,7 +1153,7 @@ if __name__ == "__main__":
         input("Enterを押して終了: ")
         sys.exit(0)
 
-    if already_running():
+    if not _debug and already_running():
         print("すでに実行中のbot4wz.pyがあるのでbotを開始せずに終了します")
         sys.exit(0)
 
