@@ -1,0 +1,43 @@
+いつも分からなくなるPersonal Access Tokenでのgit pushについて
+
+githubの右上のプロフィールからSettings選択
+左下のDeveloper Settings
+左のPersonal access tokens > Tokens (Classic)
+右上のGenerate new token > Generate new token (classic)
+Expiration > No expiration（無期限）
+一番下のCreate
+Token一覧にghp_から始まる40文字のトークンが1回だけ表示されるのでどこかに保存
+
+この手順確認中に
+git config --global credential.helper store
+git push origin main
+でpushできてしまった。
+以前に別のトークンを使っているので、~/.git-credentialsの中のなにかを使ってできたと思われる
+以下はChatGPTの示した手順。参考まで
+
+1. GitHubでPersonal Access Tokenを発行（40文字、ghp_...）
+
+2. Gitに認証保存設定をする（平文保存なのでセキュリティ注意）
+
+    git config --global credential.helper store
+
+3. 1回だけ push を試す
+
+    git push origin main
+
+    → 初回のみ次のように入力
+    Username: <GitHubユーザー名>
+    Password: ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+4. ~/.git-credentials に保存され、以降は自動でpushできるようになる
+
+    ---
+
+    # 補足：トークンを忘れても ~/.git-credentials にあれば再確認できる
+
+    cat ~/.git-credentials
+
+    # 保存をやめたいとき
+
+    git config --global --unset credential.helper
+    rm ~/.git-credentials
