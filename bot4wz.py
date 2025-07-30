@@ -838,7 +838,7 @@ async def process_message(message):
                         reply = f"登録済みのプレイヤーです"
                     else:
                         player = player_registration(user, manually=True)
-                        reply = f"登録：{player.name} 初期レート：arabia({player.rate_history['arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) michi({player.rate_history['michi'][-1]['rate']})"
+                        reply = f"登録：{player.name} 初期レート：arabia({player.rate_history['arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) michi({player.rate_history['michi'][-1]['rate']}) bakuran({player.rate_history['bakuran'][-1]['rate'])"
 
         if message.content.startswith("-setrate"):
             if message.author.id == 311505132980273153: # rakou
