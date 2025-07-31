@@ -949,6 +949,8 @@ async def process_message(message):
             else:
                 reply = "現在、部屋はありません"
             temp_message = True
+            # temp
+            reply = reply + "\nbot更新情報: https://discord.com/channels/390895191659118594/654557437738745877/1400106216813891686"
 
         if message.content.startswith("-force-bakuha-tekumakumayakonn-tekumakumayakonn"):
             room_number = to_int(message.content.split("-force-bakuha-tekumakumayakonn-tekumakumayakonn")[1])
@@ -1015,6 +1017,8 @@ async def notice_rooms():
         for room in rooms:
             if timedelta(minutes=8) <= now() - room.last_notice_timestamp and not room.fighting:
                 line = f"[{room.number}] {room.name} ＠{room.capacity - len(room.members)}  レーティング：{ladder_dict[room.ladder]}\n" + ", ".join(f"`{get_name(member)}`" for member in room.members)
+                # temp
+                line = line + "\nbot更新情報: https://discord.com/channels/390895191659118594/654557437738745877/1400106216813891686"
                 sent_message = await channel.send(line, allowed_mentions=allowed_mentions)
                 room.garbage_queue.append(sent_message.id)
                 room.last_notice_timestamp = now()
