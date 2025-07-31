@@ -1,7 +1,7 @@
 #coding: utf-8
 #!/path/to/Python_3.12.10
 
-_debug = False # 本番環境
+#_debug = False # 本番環境
 #_debug = True # 開発環境
 
 """
@@ -907,7 +907,7 @@ async def process_message(message):
                         reply = "error"
                         temp_message = True
 
-        if message.content.startswith("-getinit"):
+        if message.content.strip() == "-getinit":
             if message.channel.id != info_channel_id:
                 reply = info_commands_information
                 temp_message = True
@@ -915,7 +915,7 @@ async def process_message(message):
                 init = {ladder: tuple(find_initial_rate(players, ladder))[0:2] for ladder in ladder_dict.keys()}
                 reply = "現在の自動登録初期レート\n" + str(init) + f"\n{general_url} に戻る"
 
-        if message.content.startswith("-getinitvisual"):
+        if message.content.strip() == "-getinitvisual":
             if message.channel.id != info_channel_id:
                 reply = info_commands_information
                 temp_message = True
