@@ -36,6 +36,7 @@ Ctrl + C
 """
 
 import asyncio
+import copy
 import csv
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -45,10 +46,12 @@ import os
 import itertools
 import pickle
 import psutil
+import requests
 import sys
 
 import discord
 from discord.ext import commands
+from jinja2 import Template
 
 from rating_statistics import find_initial_rate, visualize_player_rate, draw_simple_rate_plot
 
@@ -95,6 +98,7 @@ bot_commands = [
     "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
+    "-sendhtml",
     "-force-bakuha-tekumakumayakonn-tekumakumayakonn",
     "-help", "-help-en",
     ] + secret_commands
@@ -250,6 +254,30 @@ class Player(object):
         return self.rate_history[ladder][-1]["timestamp"]
 
 
+# 本番のPlayerインスタンスを作っちゃった後なので外に書くしかない…
+def player_total_games(player, ladder):
+    return len([record["rate"] for record in player.rate_history[ladder]]) - 1
+
+def total_win(player, ladder):
+    player_total_games(player, ladder)
+    win = 0
+    rates = [record["rate"] for record in player.rate_history[ladder]]
+    for i in range(1, len(rates)):
+        if rates[i-1] < rates[i]:
+            win += 1
+    return win
+
+def total_lose(player, ladder):
+    return player_total_games(player, ladder) - total_win(player, ladder)
+
+def winrate_str(player, ladder):
+    total = player_total_games(player, ladder)
+    if 0 < total:
+        return f"{total_win(player, ladder) / total * 100 :.2f}"
+    else:
+        return None
+
+
 class Game(object):
     def __init__(self, id, host_id, ladder, team1_deltas, team2_deltas, win_team):
         self.id = id
@@ -292,6 +320,25 @@ def player_registration(user, manually=False):
         player = Player(user=user)
     players.append(player)
     return player
+
+def send_html():
+    """無料レンタルサーバーにレート表を置くが、無料ゆえにライブラリが貧弱なので
+    こっちでjinja2してしまったHTMLを送ってしまう作戦
+    """
+    if _debug:
+        url = "https://warzone.stars.ne.jp/cgi-bin/receiver_debug.cgi"
+    else:
+        url = "https://warzone.stars.ne.jp/cgi-bin/receiver.cgi"
+    with open("templates/index.html", encoding="utf-8") as f:
+        template = Template(f.read())
+    sorted_players = {}
+    for ladder in ladder_dict.keys():
+        sorted_players[ladder] = sorted(players, key=lambda player: player.latest_rate(ladder), reverse=True)
+    html = template.render(ladder_dict=ladder_dict, players=players, sorted_players=sorted_players,
+            player_total_games=player_total_games, total_win=total_win, total_lose=total_lose, winrate_str=winrate_str)
+    headers = {"Content-Type": "text/html"}
+    response = requests.post(url, data=html, headers=headers)
+    return response
 
 def process_umari(room):
     players_ = []
@@ -540,6 +587,11 @@ async def process_message(message):
                     temp_message = True
                     return reply, room_to_clean, temp_message, files_, filenames
 
+        if message.content.strip() == "-sendhtml":
+            response = send_html()
+            reply = f"Status Code: {response.status_code}\n{response.text}"
+            temp_message = True
+
         for command in ["--yyk", "-call", "-create", "-ln", "-michi", "-bakuran"]:
             if message.content.startswith(command):
                 capacity = 8
@@ -782,6 +834,7 @@ async def process_message(message):
                         "チーム1：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team1_deltas]),
                         "チーム2：" + ", ".join([f"{name}({rate})[{'+' if 0 < delta else ''}{delta}]" for (name, rate, delta) in game.team2_deltas]),
                         ])
+                    send_html()
 
         if message.content.startswith("-graph1"):
             if message.channel.id != info_channel_id:
