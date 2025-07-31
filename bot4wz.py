@@ -1,7 +1,7 @@
 #coding: utf-8
 #!/path/to/Python_3.12.10
 
-#_debug = False # 本番環境
+_debug = False # 本番環境
 #_debug = True # 開発環境
 
 """
@@ -58,10 +58,12 @@ if _debug:
     token_file_name = "canary_token.txt"
     from bot_settings import canary_bot_target_channel_id as target_channel_id
     from bot_settings import canary_bot_server_id as guild_id
+    from bot_settings import canary_bot_info_channel_id as info_channel_id
 else:
     token_file_name = "token.txt"
     from bot_settings import available_bot_target_channel_id as target_channel_id
     from bot_settings import available_bot_server_id as guild_id
+    from bot_settings import available_bot_info_channel_id as info_channel_id
 import usage
 
 try:
@@ -113,7 +115,9 @@ ladder_dict = {
     "michi": "みち",
     "bakuran": "爆ラン",
 }
-
+bot_command_url = "https://discord.com/channels/390895191659118594/700948481032060968"
+general_url = "https://discord.com/channels/390895191659118594/654557437738745877"
+info_commands_information = f"`-info`, `-players`, `-graph1`, `-graph2`, `-getinit`, `-getinitvisual` は、 {bot_command_url} で使えます"
 
 class RoomNumberExhaust(BaseException):
     def __init__(self):
@@ -521,6 +525,20 @@ async def process_message(message):
         temp_message = False
         files_ = []
         filenames = []
+        if message.channel.id == info_channel_id:
+            for command in ["--yyk", "-call", "-create", "-ln", "-michi", "-bakuran",
+                        "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
+                        "-no", "-join",
+                        "-kick",
+                        "-win", "-lose",
+                        "-register", "-setrate",
+                        "-nuke", "-out", "-leave", "-dismiss",
+                        "-rooms",
+                        "-force-bakuha-tekumakumayakonn-tekumakumayakonn"]:
+                if message.content.startswith(command):
+                    reply = f"部屋に関するコマンドは {general_url} で使えます"
+                    temp_message = True
+                    return reply, room_to_clean, temp_message, files_, filenames
 
         for command in ["--yyk", "-call", "-create", "-ln", "-michi", "-bakuran"]:
             if message.content.startswith(command):
@@ -766,74 +784,94 @@ async def process_message(message):
                         ])
 
         if message.content.startswith("-graph1"):
-            try:
-                ladder, part_of_name = message.content.split("-graph1")[1].strip().split()
-                if not ladder in ladder_dict.keys():
-                    raise Exception()
-            except:
-                reply = "使い方：`-graph1 レーティング(arabia, LN, michi) 名前（部分一致）`"
+            if message.channel.id != info_channel_id:
+                reply = info_commands_information
+                temp_message = True
             else:
-                match = list(filter(lambda player: part_of_name in player.name, players))
-                for player in match:
-                    file_, _ = visualize_player_rate(players, ladder, player.id)
-                    file_.seek(0)
-                    files_.append(file_)
-                    filenames.append(now().strftime(f"%Y-%m-%d_%H%M_position_of_{player.name}.png"))
-                reply = "全体レートに対する位置"
+                try:
+                    ladder, part_of_name = message.content.split("-graph1")[1].strip().split()
+                    if not ladder in ladder_dict.keys():
+                        raise Exception()
+                except:
+                    reply = f"使い方：`-graph1 レーティング(arabia, LN, michi) 名前（部分一致）`    {general_url} に戻る"
+                else:
+                    match = list(filter(lambda player: part_of_name in player.name, players))
+                    for player in match:
+                        file_, _ = visualize_player_rate(players, ladder, player.id)
+                        file_.seek(0)
+                        files_.append(file_)
+                        filenames.append(now().strftime(f"%Y-%m-%d_%H%M_position_of_{player.name}.png"))
+                    reply = f"全体レートに対する位置    {general_url} に戻る"
 
         if message.content.startswith("-graph2"):
-            try:
-                ladder, part_of_name = message.content.split("-graph2")[1].strip().split()
-                if not ladder in ladder_dict.keys():
-                    raise Exception()
-            except:
-                reply = "使い方：`-graph2 レーティング(arabia, LN, michi) 名前（部分一致）`"
+            if message.channel.id != info_channel_id:
+                reply = info_commands_information
+                temp_message = True
             else:
-                match = list(filter(lambda player: part_of_name in player.name, players))
-                for player in match:
-                    rates = [history["rate"] for history in player.rate_history[ladder]]
-                    file_ = draw_simple_rate_plot(rates, ladder, player.name)
-                    file_.seek(0)
-                    files_.append(file_)
-                    filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))
-                reply = "レート推移"
+                try:
+                    ladder, part_of_name = message.content.split("-graph2")[1].strip().split()
+                    if not ladder in ladder_dict.keys():
+                        raise Exception()
+                except:
+                    reply = f"使い方：`-graph2 レーティング(arabia, LN, michi) 名前（部分一致）`    {general_url} に戻る"
+                else:
+                    match = list(filter(lambda player: part_of_name in player.name, players))
+                    for player in match:
+                        rates = [history["rate"] for history in player.rate_history[ladder]]
+                        file_ = draw_simple_rate_plot(rates, ladder, player.name)
+                        file_.seek(0)
+                        files_.append(file_)
+                        filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))
+                    reply = f"レート推移    {general_url} に戻る"
 
         if message.content.startswith("-info"):
-            part_of_name = message.content.split("-info")[1].strip()
-            match = list(filter(lambda player: part_of_name in player.name, players))
-            if match:
-                reply = ""
-                for player in match:
-                    reply = reply + player.name + "\n"
-                    for ladder in ladder_dict.keys():
-                        ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
-                        if ranking:
-                            rank, name, rate, streak, games, plot, id_ = ranking[0]
-                            s = f"{ladder}: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
-                        else:
-                            s = f"{ladder}: 未プレイ"
-                        reply = reply + s + "\n"
-                    reply = reply + "\n"
-            else:
-                reply = "プレイヤーが見つかりませんでした"
+            if message.channel.id != info_channel_id:
+                reply = info_commands_information
                 temp_message = True
+            else:
+                part_of_name = message.content.split("-info")[1].strip()
+                if part_of_name == "":
+                    reply = f"プレイヤー名を入力してください(部分一致)  {general_url} に戻る"
+                    temp_message = True
+                else:
+                    match = list(filter(lambda player: part_of_name in player.name, players))
+                    if match:
+                        reply = ""
+                        for player in match:
+                            reply = reply + player.name + "\n"
+                            for ladder in ladder_dict.keys():
+                                ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
+                                if ranking:
+                                    rank, name, rate, streak, games, plot, id_ = ranking[0]
+                                    s = f"{ladder}: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
+                                else:
+                                    s = f"{ladder}: 未プレイ"
+                                reply = reply + s + "\n"
+                            reply = reply + f"{general_url} に戻る\n" + "\n"
+                    else:
+                        reply = f"プレイヤーが見つかりませんでした  {general_url} に戻る"
+                        temp_message = True
 
         if message.content.startswith("-players"):
-            ladder = message.content.split("-players")[1].strip()
-            if not ladder in ladder_dict.keys():
-                reply = f"次のいずれかのレーティングを指定してください：{', '.join(ladder_dict.keys())}"
+            if message.channel.id != info_channel_id:
+                reply = info_commands_information
                 temp_message = True
             else:
-                filenames.append(now().strftime(f"%Y-%m-%d_%H%M_{ladder}_players.csv"))
-                file_ = io.StringIO()
-                files_.append(file_)
-                writer = csv.writer(file_)
-                writer.writerow(["順位", "名前", "レート", "連勝/連敗", "試合数", "レート推移（分析用、区切り文字ハイフン'-'）"])
-                ranking = get_ranking(ladder)
-                for player in ranking:
-                    writer.writerow(player)
-                file_.seek(0)
-                reply = f"順位表：{ladder_dict[ladder]}"
+                ladder = message.content.split("-players")[1].strip()
+                if not ladder in ladder_dict.keys():
+                    reply = f"次のいずれかのレーティングを指定してください：{', '.join(ladder_dict.keys())}    {general_url} に戻る"
+                    temp_message = True
+                else:
+                    filenames.append(now().strftime(f"%Y-%m-%d_%H%M_{ladder}_players.csv"))
+                    file_ = io.StringIO()
+                    files_.append(file_)
+                    writer = csv.writer(file_)
+                    writer.writerow(["順位", "名前", "レート", "連勝/連敗", "試合数", "レート推移（分析用、区切り文字ハイフン'-'）"])
+                    ranking = get_ranking(ladder)
+                    for player in ranking:
+                        writer.writerow(player)
+                    file_.seek(0)
+                    reply = f"順位表：{ladder_dict[ladder]}    {general_url} に戻る"
 
         if message.content.startswith("-register"):
             if message.author.id == 311505132980273153: # rakou
@@ -870,16 +908,24 @@ async def process_message(message):
                         temp_message = True
 
         if message.content.startswith("-getinit"):
-            init = {ladder: tuple(find_initial_rate(players, ladder))[0:2] for ladder in ladder_dict.keys()}
-            reply = "現在の自動登録初期レート\n" + str(init)
+            if message.channel.id != info_channel_id:
+                reply = info_commands_information
+                temp_message = True
+            else:
+                init = {ladder: tuple(find_initial_rate(players, ladder))[0:2] for ladder in ladder_dict.keys()}
+                reply = "現在の自動登録初期レート\n" + str(init) + f"\n{general_url} に戻る"
 
         if message.content.startswith("-getinitvisual"):
-            for ladder in ladder_dict.keys():
-                _, _, _, bytesio = find_initial_rate(players, ladder, visualize=True)
-                bytesio.seek(0)
-                files_.append(bytesio)
-                filenames.append(now().strftime(f"%Y-%m-%d_%H%M_initial_rate_of_{ladder}.png"))
-            reply = "初期レートの位置"
+            if message.channel.id != info_channel_id:
+                reply = info_commands_information
+                temp_message = True
+            else:
+                for ladder in ladder_dict.keys():
+                    _, _, _, bytesio = find_initial_rate(players, ladder, visualize=True)
+                    bytesio.seek(0)
+                    files_.append(bytesio)
+                    filenames.append(now().strftime(f"%Y-%m-%d_%H%M_initial_rate_of_{ladder}.png"))
+                reply = f"初期レートの位置    {general_url} に戻る"
 
         for command in ["-nuke", "-out", "-leave", "-dismiss"]:
             if message.content.startswith(command):
@@ -1084,7 +1130,7 @@ async def on_message(message):
     # bot自身の発言を拾わない
     if message.author.bot:
         return
-    if message.channel.id == target_channel_id:
+    if message.channel.id in (target_channel_id, info_channel_id):
         for command in bot_commands:
             if message.content.startswith(command):
                 jst = now() + timedelta(hours=9)
