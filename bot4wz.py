@@ -346,9 +346,11 @@ async def customized_elo_rating(room):
         if delta == 0:
             delta = 1 if win else -1
         if delta < 0:
-            delta = min(-20 if room.ladder=="arabia" else -40, delta)
+            delta = min(-20, delta)
         if 0 < delta:
-            delta = max(20 if room.ladder=="arabia" else 40, delta)
+            delta = max(20, delta)
+        if room.ladder != "arabia":
+            delta = delta * 2  # michi, LN, bakuranは最低40変動
 
         player.rate_history[ladder].append({
             "rate": player.latest_rate(ladder) + delta,
