@@ -1,7 +1,8 @@
 #coding: utf-8
 #!/path/to/Python_3.12.10
 
-_debug = False
+#_debug = False # 本番環境
+#_debug = True # 開発環境
 
 """
 [requirements]
