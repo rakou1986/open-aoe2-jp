@@ -849,11 +849,13 @@ async def process_message(message):
                     reply = f"使い方：`-graph1 レーティング(arabia, LN, michi) 名前（部分一致）`    {general_url} に戻る"
                 else:
                     match = list(filter(lambda player: part_of_name in player.name, players))
-                    for player in match:
+                    for i, player in enumerate(match):
                         file_, _ = visualize_player_rate(players, ladder, player.id)
                         file_.seek(0)
                         files_.append(file_)
                         filenames.append(now().strftime(f"%Y-%m-%d_%H%M_position_of_{player.name}.png"))
+                        if 7 <= i: # 重すぎるので描画枚数制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                            break
                     reply = f"全体レートに対する位置    {general_url} に戻る"
 
         if message.content.startswith("-graph2"):
@@ -869,12 +871,14 @@ async def process_message(message):
                     reply = f"使い方：`-graph2 レーティング(arabia, LN, michi) 名前（部分一致）`    {general_url} に戻る"
                 else:
                     match = list(filter(lambda player: part_of_name in player.name, players))
-                    for player in match:
+                    for i, player in enumerate(match):
                         rates = [history["rate"] for history in player.rate_history[ladder]]
                         file_ = draw_simple_rate_plot(rates, ladder, player.name)
                         file_.seek(0)
                         files_.append(file_)
                         filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))
+                        if 7 <= i: # 重すぎるので描画枚数制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                            break
                     reply = f"レート推移    {general_url} に戻る"
 
         if message.content.startswith("-info"):
@@ -890,7 +894,7 @@ async def process_message(message):
                     match = list(filter(lambda player: part_of_name in player.name, players))
                     if match:
                         reply = ""
-                        for player in match:
+                        for i, player in enumerate(match):
                             reply = reply + player.name + "\n"
                             for ladder in ladder_dict.keys():
                                 ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
@@ -901,6 +905,8 @@ async def process_message(message):
                                     s = f"{ladder}: 未プレイ"
                                 reply = reply + s + "\n"
                             reply = reply + f"{general_url} に戻る\n" + "\n"
+                            if 7 <= i: # ログが流れすぎるので制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                                break
                     else:
                         reply = f"プレイヤーが見つかりませんでした  {general_url} に戻る"
                         temp_message = True
