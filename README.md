@@ -176,6 +176,6 @@ Disordがある限り、少しPythonに明るい方なら、誰でも簡単に�
 ## SPECIAL THANKS TO
 :art: Artworks: hachi(Tos)  
 :earth_asia: Language support: k693  
-:computer: Provide reverve exec environment: NicoBtan  
+:computer: Provide reserve devices: NicoBtan  
 :gem: Financial support: EM a.k.a. E・Mo・No  
 :hearts: And YOU! (Yes, you reading this!:tada:)  
