@@ -180,5 +180,5 @@ Disordがある限り、少しPythonに明るい方なら、誰でも簡単に�
 :art: Artworks: hachi(Tos)  
 :earth_asia: Language support: k693  
 :computer: Provide reserve devices: NicoBtan  
-:gem: Financial support: EM a.k.a. E・Mo・No  
+:gem: Financial support: EM a.k.a. E・Mo・no  
 :hearts: And YOU! (Yes, you reading this!:tada:)  
