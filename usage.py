@@ -45,3 +45,51 @@ en = """\
 Please see this refecenses with translate: https://warzone.stars.ne.jp/how-to-use.html
 Player list: https://warzone.stars.ne.jp/
 """
+
+no_token = """\
+botの実行にはトークンが必要です。
+warzone-aoeで認証済みのbotのトークンはrakouが発行しますが、rakouがいない場合はDiscord Developer Portalでアプリケーションを作成し、warzone-aoeで認証し、有効なトークンをセットしなければなりません。
+
+2025/04現在の手順
+  ブラウザ版Discordにログイン
+  https://discord.com/developers/docs/intro を開く
+  Applications > New Application > rakou_botなどと入力 > Create
+
+  SETTINGS > OAuth2 > OAuth2 URL Generator > bot をチェック
+  下に出てくる BOT PERMISSIONSで以下をチェック
+    - Send Messages
+    - Manage Messages
+    - Read Message History
+    - Mention Everyone
+
+  一番下に出てくるGENERATED URLをCopyしてwarzone-aoeのテキストに貼り付け
+
+  @rate_counseler（名前が黄色い人）を呼んで、貼り付けたURLを押してもらって、botを認証してもらう。
+
+  Dicord Developerの画面に戻り、 SETTINGS > Bot を開く
+  TOKEN > Reset Token を押すたびに1度だけ出てくる Token をコピーして、token.txt という名前で bot4wz.exe と同じフォルダに保存する。
+  ファイル名は token.txt でなければなりません。
+
+  【注意】さらにReset Tokenを押すと、過去のトークンが無効になります。トークンは常に最新の1つだけが有効です。
+  もしReset Tokenを押してしまったら、token.txt を削除して、新しいトークンを token.txt に保存してください。
+
+手順を実行したらこのウインドウを閉じて、再度bot4wz.exeをダブルクリックすればbotが起動します。
+
+botが起動すると、# bot_statusチャンネルに、botを起動したPCのホスト名が出ます。
+恥ずかしいホスト名とか、人に見られたくないホスト名は、事前に変更をおすすめします。
+できれば誰のPCか分かる名前だとよいでしょう。
+Windows 10では、設定 > システム > バージョン情報 > デバイス名
+これがホスト名です。「このPCの名前を変更」で変更します。
+
+botを起動後、botが1回応答すると、5つの.pickleファイルが作られます。これらを触らないようにしてください。
+ただしbotがなにか動作不良を起こした場合はこれらを削除すると初期化できます。
+
+"""
+
+at_launch = """\
+
+終了するには Ctrl + C または kill -SIGINT <pid>
+部屋の状態などを保存するための.pickleファイルが3つ作られますが、触らないでください。
+See this refecenses with translate: https://warzone.stars.ne.jp/how-to-use.html
+Player list: https://warzone.stars.ne.jp/
+"""
