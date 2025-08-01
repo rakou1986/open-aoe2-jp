@@ -3,7 +3,7 @@
 2025/08/01版
 
 ## はじめに
-長らく我々の親しんだ[Warzoneレーティングサイト](http://warzone.php.xdomain.jp/)は、2025/07/31のXFREEレンタルサーバーのサービス終了に伴い閉鎖となりました。
+長らく我々の親しんだ[Warzoneレーティングサイト](http://warzone.php.xdomain.jp/)は、2025/07/31のXFREEレンタルサーバーのサービス終了に伴い閉鎖となりました。  
 同じくXFREEを使用していた、[ゆうぼくの時代](http://lazuaoe.php.xdomain.jp/rate/)も、なくなってしまいました。
 この場を借りて長年の管理に感謝します。
 

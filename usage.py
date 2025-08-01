@@ -42,6 +42,6 @@ jp = """\
 """
 
 en = """\
-See this refecenses with translate: https://warzone.stars.ne.jp/how-to-use.html
+Please see this refecenses with translate: https://warzone.stars.ne.jp/how-to-use.html
 Player list: https://warzone.stars.ne.jp/
 """
