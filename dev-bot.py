@@ -1,7 +1,7 @@
 #coding: utf-8
 #!/path/to/Python_3.12.10
 
-#_debug = False # 本番環境
+_debug = False # 本番環境
 _debug = True # 開発環境
 
 """
@@ -849,11 +849,13 @@ async def process_message(message):
                     reply = f"使い方：`-graph1 レーティング(arabia, LN, michi) 名前（部分一致）`    {general_url} に戻る"
                 else:
                     match = list(filter(lambda player: part_of_name in player.name, players))
-                    for player in match:
+                    for i, player in enumerate(match):
                         file_, _ = visualize_player_rate(players, ladder, player.id)
                         file_.seek(0)
                         files_.append(file_)
                         filenames.append(now().strftime(f"%Y-%m-%d_%H%M_position_of_{player.name}.png"))
+                        if 7 <= i: # 重すぎるので描画枚数制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                            break
                     reply = f"全体レートに対する位置    {general_url} に戻る"
 
         if message.content.startswith("-graph2"):
@@ -869,12 +871,14 @@ async def process_message(message):
                     reply = f"使い方：`-graph2 レーティング(arabia, LN, michi) 名前（部分一致）`    {general_url} に戻る"
                 else:
                     match = list(filter(lambda player: part_of_name in player.name, players))
-                    for player in match:
+                    for i, player in enumerate(match):
                         rates = [history["rate"] for history in player.rate_history[ladder]]
                         file_ = draw_simple_rate_plot(rates, ladder, player.name)
                         file_.seek(0)
                         files_.append(file_)
                         filenames.append(now().strftime(f"%Y-%m-%d_%H%M_plot_of_{player.name}_{ladder}.png"))
+                        if 7 <= i: # 重すぎるので描画枚数制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                            break
                     reply = f"レート推移    {general_url} に戻る"
 
         if message.content.startswith("-info"):
@@ -890,7 +894,7 @@ async def process_message(message):
                     match = list(filter(lambda player: part_of_name in player.name, players))
                     if match:
                         reply = ""
-                        for player in match:
+                        for i, player in enumerate(match):
                             reply = reply + player.name + "\n"
                             for ladder in ladder_dict.keys():
                                 ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
@@ -901,6 +905,8 @@ async def process_message(message):
                                     s = f"{ladder}: 未プレイ"
                                 reply = reply + s + "\n"
                             reply = reply + f"{general_url} に戻る\n" + "\n"
+                            if 7 <= i: # ログが流れすぎるので制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                                break
                     else:
                         reply = f"プレイヤーが見つかりませんでした  {general_url} に戻る"
                         temp_message = True
@@ -1186,8 +1192,7 @@ async def on_message(message):
     if message.channel.id in (target_channel_id, info_channel_id):
         for command in bot_commands:
             if message.content.startswith(command):
-                jst = now() + timedelta(hours=9)
-                print(f"INPUT:\n{message.content}\n{jst}\n")
+                print(f"INPUT: {get_name(message.author)}\n{message.content}\n{now()}\n")
                 reply, room_to_clean, temp_message, files_, filenames = await process_message(message)
                 if len(files_) == len(filenames) and len(files_) != 0:
                     files = []
@@ -1204,8 +1209,7 @@ async def on_message(message):
                     await room_cleaner(room_to_clean, message, sent_message)
                 if temp_message:
                     temp_message_ids.append( (message.channel.id, sent_message.id) )
-                jst = now() + timedelta(hours=9)
-                print(f"OUTPUT:\n{reply}\n{jst}\n")
+                print(f"OUTPUT:\n{reply}\n{now()}\n")
                 await save_bot_state()
                 break
     await bot.process_commands(message)
