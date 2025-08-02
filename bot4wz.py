@@ -1192,8 +1192,7 @@ async def on_message(message):
     if message.channel.id in (target_channel_id, info_channel_id):
         for command in bot_commands:
             if message.content.startswith(command):
-                jst = now() + timedelta(hours=9)
-                print(f"INPUT:\n{message.content}\n{jst}\n")
+                print(f"INPUT: {get_name(message.author)}\n{message.content}\n{now()}\n")
                 reply, room_to_clean, temp_message, files_, filenames = await process_message(message)
                 if len(files_) == len(filenames) and len(files_) != 0:
                     files = []
@@ -1210,8 +1209,7 @@ async def on_message(message):
                     await room_cleaner(room_to_clean, message, sent_message)
                 if temp_message:
                     temp_message_ids.append( (message.channel.id, sent_message.id) )
-                jst = now() + timedelta(hours=9)
-                print(f"OUTPUT:\n{reply}\n{jst}\n")
+                print(f"OUTPUT:\n{reply}\n{now()}\n")
                 await save_bot_state()
                 break
     await bot.process_commands(message)
