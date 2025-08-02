@@ -83,13 +83,10 @@ Windows 10では、設定 > システム > バージョン情報 > デバイス�
 
 botを起動後、botが1回応答すると、5つの.pickleファイルが作られます。これらを触らないようにしてください。
 ただしbotがなにか動作不良を起こした場合はこれらを削除すると初期化できます。
-
 """
 
 at_launch = """\
 
 終了するには Ctrl + C または kill -SIGINT <pid>
 部屋の状態などを保存するための.pickleファイルが3つ作られますが、触らないでください。
-See this refecenses with translate: https://warzone.stars.ne.jp/how-to-use.html
-Player list: https://warzone.stars.ne.jp/
 """
