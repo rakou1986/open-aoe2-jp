@@ -310,6 +310,7 @@ def set_rate(user, ladder, rate):
     else:
         return False
     player.rate_history[ladder][-1]["rate"] = rate
+    player.rating_booster = 0
     return True
 
 def player_registration(user, manually=False):
@@ -960,10 +961,10 @@ async def process_message(message):
                         if player_found:
                             reply = f"設定：{get_name(user)} レーティング：{ladder_dict[ladder]} レート：{rate}(+7000)"
                         else:
-                            reply = "error"
+                            reply = "player_found == False"
                             temp_message = True
                     else:
-                        reply = "error"
+                        reply = f"rate is None, {rate}"
                         temp_message = True
 
         if message.content.strip() == "-getinit":
