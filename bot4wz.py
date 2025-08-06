@@ -62,11 +62,13 @@ if _debug:
     from bot_settings import canary_bot_target_channel_id as target_channel_id
     from bot_settings import canary_bot_server_id as guild_id
     from bot_settings import canary_bot_info_channel_id as info_channel_id
+    from bot_settings import canary_bot_authorized_user_ids as authorized_user_ids
 else:
     token_file_name = "token.txt"
     from bot_settings import available_bot_target_channel_id as target_channel_id
     from bot_settings import available_bot_server_id as guild_id
     from bot_settings import available_bot_info_channel_id as info_channel_id
+    from bot_settings import available_bot_authorized_user_ids as authorized_user_ids
 import usage
 
 try:
@@ -310,6 +312,7 @@ def set_rate(user, ladder, rate):
     else:
         return False
     player.rate_history[ladder][-1]["rate"] = rate
+    player.rating_booster = 0
     return True
 
 def player_registration(user, manually=False):
@@ -933,7 +936,7 @@ async def process_message(message):
                     reply = f"順位表：{ladder_dict[ladder]}    {general_url} に戻る"
 
         if message.content.startswith("-register"):
-            if message.author.id == 311505132980273153: # rakou
+            if message.author.id in authorized_user_ids:
                 if not message.mentions:
                     reply = "error"
                     temp_message = True
@@ -946,7 +949,7 @@ async def process_message(message):
                         reply = f"登録：{player.name} 初期レート：arabia({player.rate_history['arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) michi({player.rate_history['michi'][-1]['rate']}) bakuran({player.rate_history['bakuran'][-1]['rate']})"
 
         if message.content.startswith("-setrate"):
-            if message.author.id == 311505132980273153: # rakou
+            if message.author.id in authorized_user_ids:
                 parts = message.content.split()
                 if len(parts) != 4 or not message.mentions:
                     reply = "error"
@@ -960,10 +963,10 @@ async def process_message(message):
                         if player_found:
                             reply = f"設定：{get_name(user)} レーティング：{ladder_dict[ladder]} レート：{rate}(+7000)"
                         else:
-                            reply = "error"
+                            reply = "player_found == False"
                             temp_message = True
                     else:
-                        reply = "error"
+                        reply = f"rate is None, {rate}"
                         temp_message = True
 
         if message.content.strip() == "-getinit":
