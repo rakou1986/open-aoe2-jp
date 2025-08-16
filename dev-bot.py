@@ -2,7 +2,7 @@
 #!/path/to/Python_3.12.10
 
 _debug = False # 本番環境
-_debug = True # 開発環境
+#_debug = True # 開発環境
 
 """
 [requirements]
@@ -62,11 +62,13 @@ if _debug:
     from bot_settings import canary_bot_target_channel_id as target_channel_id
     from bot_settings import canary_bot_server_id as guild_id
     from bot_settings import canary_bot_info_channel_id as info_channel_id
+    from bot_settings import canary_bot_authorized_user_ids as authorized_user_ids
 else:
     token_file_name = "token.txt"
     from bot_settings import available_bot_target_channel_id as target_channel_id
     from bot_settings import available_bot_server_id as guild_id
     from bot_settings import available_bot_info_channel_id as info_channel_id
+    from bot_settings import available_bot_authorized_user_ids as authorized_user_ids
 import usage
 
 try:
@@ -93,7 +95,7 @@ bot_commands = [
     "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
     "-no", "-join",
     "-kick",
-    "-win", "-lose",
+    "-win", "-lose", "-force-win", "-force-lose",
     "-info", "-players", "-graph1", "-graph2",
     "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
@@ -310,6 +312,7 @@ def set_rate(user, ladder, rate):
     else:
         return False
     player.rate_history[ladder][-1]["rate"] = rate
+    player.rating_booster = 0
     return True
 
 def player_registration(user, manually=False):
@@ -782,7 +785,7 @@ async def process_message(message):
                                 reply = "対象が部屋にいません"
                                 temp_message = True
 
-        for command in ["-win", "-lose"]:
+        for command in ["-win", "-lose", "-force-win", "-force-lose"]:
             if message.content.startswith(command):
                 target_room = None
                 room_number = message.content.split(command)[1]
@@ -795,6 +798,8 @@ async def process_message(message):
                         target_room = owned_rooms[0]
                     elif len(owned_rooms) == 0:
                         reply = "干している部屋はありません。ホスト用コマンドです"
+                        if "-force" in command:
+                            reply = "`-force-win`, `-force-lose` には部屋番号を指定してください"
                         temp_message = True
                     else:
                         reply = "複数の部屋を建てたときは部屋番号を指定してね"
@@ -810,8 +815,13 @@ async def process_message(message):
                                 if message.author.id == room_.owner.id and room_.fighting:
                                     target_room = room_
                                     break
+                                if ("-force" in command) and (message.author.id in authorized_user_ids):
+                                    if room_.fighting:
+                                        target_room = room_
+                                        command = command.replace("-force", "")
+                                        break
                         else:
-                            reply = "その番号の部屋がないか、埋まっていないか、ホストではないため勝敗報告できません"
+                            reply = "その番号の部屋がないか、埋まっていないか、ホストではないか、コマンド使用権がないため勝敗報告できません"
                             temp_message = True
                 if target_room and target_room.fighting:
                     room = target_room
@@ -933,7 +943,7 @@ async def process_message(message):
                     reply = f"順位表：{ladder_dict[ladder]}    {general_url} に戻る"
 
         if message.content.startswith("-register"):
-            if message.author.id == 311505132980273153: # rakou
+            if message.author.id in authorized_user_ids:
                 if not message.mentions:
                     reply = "error"
                     temp_message = True
@@ -946,7 +956,7 @@ async def process_message(message):
                         reply = f"登録：{player.name} 初期レート：arabia({player.rate_history['arabia'][-1]['rate']}) LN({player.rate_history['LN'][-1]['rate']}) michi({player.rate_history['michi'][-1]['rate']}) bakuran({player.rate_history['bakuran'][-1]['rate']})"
 
         if message.content.startswith("-setrate"):
-            if message.author.id == 311505132980273153: # rakou
+            if message.author.id in authorized_user_ids:
                 parts = message.content.split()
                 if len(parts) != 4 or not message.mentions:
                     reply = "error"
@@ -960,10 +970,10 @@ async def process_message(message):
                         if player_found:
                             reply = f"設定：{get_name(user)} レーティング：{ladder_dict[ladder]} レート：{rate}(+7000)"
                         else:
-                            reply = "error"
+                            reply = "player_found == False"
                             temp_message = True
                     else:
-                        reply = "error"
+                        reply = f"rate is None, {rate}"
                         temp_message = True
 
         if message.content.strip() == "-getinit":
