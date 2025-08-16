@@ -27,9 +27,11 @@ jp = """\
   自動登録の初期レート表示 -getinit
   その可視化 -getinitvisual
 
-移行・移行直後調整用（ひとまずrakou用）
+管理用（-register, -setrateは移行用）
   -register @メンション
   -setrate @メンション レーティング（arabia, LN, michi, bakuran） レートの数
+  -force-win [部屋番号]（ホスト視点で使用のこと）
+  -force-lose [部屋番号]（ホスト視点で使用のこと）
 
 その他
   部屋一覧 -rooms

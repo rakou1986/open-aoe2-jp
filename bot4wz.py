@@ -95,7 +95,7 @@ bot_commands = [
     "-bakuha", "-del", "-cancel", "-destroy", "-hakai", "-explosion",
     "-no", "-join",
     "-kick",
-    "-win", "-lose",
+    "-win", "-lose", "-force-win", "-force-lose",
     "-info", "-players", "-graph1", "-graph2",
     "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
@@ -785,7 +785,7 @@ async def process_message(message):
                                 reply = "対象が部屋にいません"
                                 temp_message = True
 
-        for command in ["-win", "-lose"]:
+        for command in ["-win", "-lose", "-force-win", "-force-lose"]:
             if message.content.startswith(command):
                 target_room = None
                 room_number = message.content.split(command)[1]
@@ -798,6 +798,8 @@ async def process_message(message):
                         target_room = owned_rooms[0]
                     elif len(owned_rooms) == 0:
                         reply = "干している部屋はありません。ホスト用コマンドです"
+                        if "-force" in command:
+                            reply = "`-force-win`, `-force-lose` には部屋番号を指定してください"
                         temp_message = True
                     else:
                         reply = "複数の部屋を建てたときは部屋番号を指定してね"
@@ -813,8 +815,13 @@ async def process_message(message):
                                 if message.author.id == room_.owner.id and room_.fighting:
                                     target_room = room_
                                     break
+                                if ("-force" in command) and (message.author.id in authorized_user_ids):
+                                    if room_.fighting:
+                                        target_room = room_
+                                        command = command.replace("-force", "")
+                                        break
                         else:
-                            reply = "その番号の部屋がないか、埋まっていないか、ホストではないため勝敗報告できません"
+                            reply = "その番号の部屋がないか、埋まっていないか、ホストではないか、コマンド使用権がないため勝敗報告できません"
                             temp_message = True
                 if target_room and target_room.fighting:
                     room = target_room
