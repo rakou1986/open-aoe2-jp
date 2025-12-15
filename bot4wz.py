@@ -96,7 +96,8 @@ bot_commands = [
     "-no", "-join",
     "-kick",
     "-win", "-lose", "-force-win", "-force-lose",
-    "-info", "-players", "-graph1", "-graph2",
+    "-info", "-data", "-about",
+    "-players", "-graph1", "-graph2",
     "-register", "-setrate", "-getinit", "-getinitvisual",
     "-nuke", "-out", "-leave", "-dismiss",
     "-rooms",
@@ -123,7 +124,7 @@ ladder_dict = {
 }
 bot_command_url = "https://discord.com/channels/390895191659118594/700948481032060968"
 general_url = "https://discord.com/channels/390895191659118594/654557437738745877"
-info_commands_information = f"`-info`, `-players`, `-graph1`, `-graph2`, `-getinit`, `-getinitvisual` は、 {bot_command_url} で使えます"
+info_commands_information = f"`-info (-data, -about)`, `-players`, `-graph1`, `-graph2`, `-getinit`, `-getinitvisual` は、 {bot_command_url} で使えます"
 
 class RoomNumberExhaust(BaseException):
     def __init__(self):
@@ -891,35 +892,36 @@ async def process_message(message):
                             break
                     reply = f"レート推移    {general_url} に戻る"
 
-        if message.content.startswith("-info"):
-            if message.channel.id != info_channel_id:
-                reply = info_commands_information
-                temp_message = True
-            else:
-                part_of_name = message.content.split("-info")[1].strip()
-                if part_of_name == "":
-                    reply = f"プレイヤー名を入力してください(部分一致)  {general_url} に戻る"
+        for command in ["-info", "-data", "-about"]:
+            if message.content.startswith(command):
+                if message.channel.id != info_channel_id:
+                    reply = info_commands_information
                     temp_message = True
                 else:
-                    match = list(filter(lambda player: part_of_name in player.name, players))
-                    if match:
-                        reply = ""
-                        for i, player in enumerate(match):
-                            reply = reply + player.name + "\n"
-                            for ladder in ladder_dict.keys():
-                                ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
-                                if ranking:
-                                    rank, name, rate, streak, games, plot, id_ = ranking[0]
-                                    s = f"{ladder}: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
-                                else:
-                                    s = f"{ladder}: 未プレイ"
-                                reply = reply + s + "\n"
-                            reply = reply + f"{general_url} に戻る\n" + "\n"
-                            if 7 <= i: # ログが流れすぎるので制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
-                                break
-                    else:
-                        reply = f"プレイヤーが見つかりませんでした  {general_url} に戻る"
+                    part_of_name = message.content.split(command)[1].strip()
+                    if part_of_name == "":
+                        reply = f"プレイヤー名を入力してください(部分一致)  {general_url} に戻る"
                         temp_message = True
+                    else:
+                        match = list(filter(lambda player: part_of_name in player.name, players))
+                        if match:
+                            reply = ""
+                            for i, player in enumerate(match):
+                                reply = reply + player.name + "\n"
+                                for ladder in ladder_dict.keys():
+                                    ranking = list(filter(lambda row: row[-1] == player.id, get_ranking(ladder, with_id=True)))
+                                    if ranking:
+                                        rank, name, rate, streak, games, plot, id_ = ranking[0]
+                                        s = f"{ladder}: 順位={rank}, レート={rate}, 連勝/連敗={streak}, 試合数={games}"
+                                    else:
+                                        s = f"{ladder}: 未プレイ"
+                                    reply = reply + s + "\n"
+                                reply = reply + f"{general_url} に戻る\n" + "\n"
+                                if 7 <= i: # ログが流れすぎるので制限。部分一致で見つかる人が多すぎるときも来るかもしれないが、そうそうないはず
+                                    break
+                        else:
+                            reply = f"プレイヤーが見つかりませんでした  {general_url} に戻る"
+                            temp_message = True
 
         if message.content.startswith("-players"):
             if message.channel.id != info_channel_id:
